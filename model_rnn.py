@@ -165,9 +165,6 @@ for space in param_space:
         np.save(open(args.certainty, "wb"), certainty_data)
     # end if
 
-    # W index
-    w_index += 1
-
     # Last space
     last_space = space
 # end for
