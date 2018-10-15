@@ -27,7 +27,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features, settings
+from tools import argument_parsing, dataset, functions, features, settings, rnn
 import matplotlib.pyplot as plt
 from models import *
 from torch import optim
@@ -105,7 +105,10 @@ for space in param_space:
             )
 
             # Model
-            rnn = EmbRNN(
+            rnn = rnn.create_model(
+                feature=feature,
+                pretrained=args.pretrained,
+                cuda=args.cuda,
                 embedding_dim=embedding_size,
                 hidden_dim=hidden_size,
                 vocab_size=settings.voc_size[feature],
@@ -114,9 +117,6 @@ for space in param_space:
                 dropout=dropout,
                 batch_size=args.batch_size
             )
-            if args.cuda:
-                rnn.cuda()
-            # end if
 
             # Optimizer
             optimizer = optim.SGD(rnn.parameters(), lr=0.001, momentum=0.9)
