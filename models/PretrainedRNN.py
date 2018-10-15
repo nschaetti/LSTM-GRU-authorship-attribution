@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 
 # RNN with Embeddings
-class EmbRNN(nn.Module):
+class PretrainedRNN(nn.Module):
     """
     RNN with embeddings
     """
@@ -28,7 +28,7 @@ class EmbRNN(nn.Module):
         :param dropout:
         """
         # Super
-        super(EmbRNN, self).__init__()
+        super(PretrainedRNN, self).__init__()
 
         # Properties
         self.pretrained_model = pretrained_model
@@ -93,4 +93,4 @@ class EmbRNN(nn.Module):
         return author_scores
     # end forward
 
-# end EmbRNN
+# end PretrainedRNN
