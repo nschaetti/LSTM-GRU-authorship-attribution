@@ -130,7 +130,7 @@ def list_to_tensors(batch_list):
     if batch_list[0][0].dim() == 2:
         batch_inputs = torch.LongTensor(batch_size, max_sequence_length).fill_(0)
     else:
-        batch_inputs = torch.LongTensor(batch_size, max_sequence_length, batch_list[0][0].size(2)).fill_(0)
+        batch_inputs = torch.FloatTensor(batch_size, max_sequence_length, batch_list[0][0].size(2)).fill_(0)
     # end if
 
     # Time labels
