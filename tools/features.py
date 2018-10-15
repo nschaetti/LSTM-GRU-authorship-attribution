@@ -166,3 +166,5 @@ def load_character_embedding(emb_path):
     token_to_ix, weights = torch.load(open(emb_path, 'rb'))
     return token_to_ix, weights
 # end load_character_embedding
+
+
