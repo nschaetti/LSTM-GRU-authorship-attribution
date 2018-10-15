@@ -41,3 +41,7 @@ voc_size['wv'] = 27396
 voc_size['c1'] = 85
 voc_size['c2'] = 2764
 voc_size['c3'] = 22097
+
+# Input dim
+input_dims = dict()
+input_dims['wv'] = 300
