@@ -38,22 +38,29 @@ def parser_training():
     # end for
 
     # LSTM/GRU arguments
+    args.add_argument(command="--rnn-type", name="rnn_type", type=str, help="Type of RNN (rnn, lstm, gru)", default='lstm', extended=True)
     args.add_argument(command="--hidden-size", name="hidden_size", type=float, help="Size of the hidden vector",
                       required=True, extended=True)
     args.add_argument(command="--cell-size", name="cell_size", type=float, help="Size of the cell vector",
                       required=True, extended=True)
+    args.add_argument(command="--embedding-size", name="embedding_size", type=float, help="Size of the embedding",
+                      required=True, extended=True)
     args.add_argument(command="--learning-window", name="learning_window", type=int, help="Size of the learning window",
                       required=True, extended=True)
+    args.add_argument(command="--num-layers", name="num_layers", type=int, help="Number of recurrent layers", default=1, extended=True)
+    args.add_argument(command="--dropout", name="dropout", type=float, help="Dropout", default=0, extended=True)
     args.add_argument(command="--feature", name="feature", type=str,
                       help="The text transformer to use (fw, pos, tag, wv, c1, c2, c3, cnn)", default='wv',
                       extended=True)
-    args.add_argument(command="--pretrained", name="pretrained", type=bool, help="Use pretrained layer or not", default=False, extended=False)
+    args.add_argument(command="--pretrained", name="pretrained", action='store_true', help="Use pretrained layer or not", default=False, extended=False)
     args.add_argument(command="--voc-size", name="voc_size", type=int, help="Voc. size",
                       default=30000, extended=False)
     args.add_argument(command="--n-layers", name="n_layers", type=int, help="Number of recurrent layers", extended=True,
                       default="1")
     args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
                       default='~/Projets/TURING/Datasets/', extended=False)
+    args.add_argument(command="--batch-size", name="batch_size", type=float, help="Size of the batches",
+                      default=64, extended=False)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
@@ -62,6 +69,8 @@ def parser_training():
                       default='en_vectors_web_lg', extended=True)
 
     # Experiment output parameters
+    args.add_argument(command="--epoch", name="epoch", type=int, help="How many epoch",
+                      extended=False, required=False, default=300)
     args.add_argument(command="--window-size", name="window_size", type=str, help="Window size for prediction",
                       extended=True, required=False, default=0)
     args.add_argument(command="--measure", name="measure", type=str, help="Which measure to test (global/local)", extended=False, required=False, default='global')
