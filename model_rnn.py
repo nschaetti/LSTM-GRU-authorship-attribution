@@ -27,8 +27,11 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features
+from tools import argument_parsing, dataset, functions, features, settings
 import matplotlib.pyplot as plt
+from models import *
+from torch import optim
+import torch.nn as nn
 
 
 ####################################################
@@ -51,7 +54,7 @@ last_space = dict()
 # Iterate
 for space in param_space:
     # Params
-    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window = functions.get_params(space)
+    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout = functions.get_params(space)
 
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(
@@ -80,8 +83,6 @@ for space in param_space:
         # Set sample
         xp.set_sample_state(n)
 
-        # Model
-
         # Average
         average_k_fold = np.array([])
 
@@ -103,59 +104,208 @@ for space in param_space:
                 args.embedding_path, lang
             )
 
-            # Get training data for this fold
-            for i, data in enumerate(reuters_loader_train):
-                # Inputs and labels
-                inputs, labels, time_labels = data
-
-                # Reset hidden state
-
-                # For each training window
-                for j in range(inputs.size(1)):
-                    # To variable
-                    window_inputs, window_time_labels = Variable(inputs[0, j]), Variable(time_labels[0, j])
-                    if use_cuda: window_inputs, window_time_labels = window_inputs.cuda(), window_time_labels.cuda()
-
-                    # TRAINING
-                    print(window_inputs)
-                    print(labels)
-                    print(window_time_labels)
-                    if j == 10:
-                        exit()
-                    # end if
-                # end for
-            # end for
-
-            # Counters
-            successes = 0.0
-            count = 0.0
-            local_success = 0.0
-            local_count = 0.0
-
-            # Get test data for this fold
-            for i, data in enumerate(reuters_loader_test):
-                # Inputs and labels
-                inputs, labels, time_labels = data
-
-                # Time labels
-                local_labels = torch.LongTensor(1, time_labels.size(1)).fill_(labels[0])
-
-                # To variable
-                inputs, labels, time_labels, local_labels = Variable(inputs), Variable(labels), Variable(time_labels), Variable(local_labels)
-                if use_cuda: inputs, labels, time_labels, local_labels = inputs.cuda(), labels.cuda(), time_labels.cuda(), local_labels.cuda()
-
-                # TESTING
-            # end for
-
-            # Compute accuracy
-            if args.measure == 'global':
-                accuracy = successes / count
-            else:
-                accuracy = local_success / local_count
+            # Model
+            rnn = EmbRNN(
+                embedding_dim=embedding_size,
+                hidden_dim=hidden_size,
+                vocab_size=settings.voc_size[feature],
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_size=args.batch_size
+            )
+            if args.cuda:
+                rnn.cuda()
             # end if
 
-            # Print success rate
-            xp.add_result(accuracy)
+            # Optimizer
+            optimizer = optim.SGD(rnn.parameters(), lr=0.001, momentum=0.9)
+
+            # Loss function
+            loss_function = nn.CrossEntropyLoss()
+
+            # For each epoch
+            for epoch in range(args.epoch):
+                # Total losses
+                training_loss = 0.0
+                training_total = 0.0
+                test_loss = 0.0
+                test_total = 0.0
+
+                # Training
+                rnn.train()
+
+                # Get training data for this fold
+                for i, data in enumerate(reuters_loader_train):
+                    # Inputs and labels
+                    inputs, labels, _ = data
+
+                    # Time labels
+                    time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
+
+                    # Sequences length
+                    sequence_length = inputs.size(1)
+
+                    # Batch
+                    if i % args.batch_size == 0 or i == 1349:
+                        if i != 0:
+                            if i == 1349:
+                                batch_list.append((inputs, time_labels, sequence_length, labels))
+                            # end if
+
+                            # Sort list
+                            batch_list.sort(key=lambda tup: tup[2], reverse=True)
+
+                            # Transformation to tensors
+                            batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
+
+                            # Variable and CUDA
+                            batch_tensor, batch_labels, batch_lengths, batch_y = Variable(batch_tensor), Variable(batch_labels), Variable(batch_lengths), Variable(batch_y)
+                            if args.cuda:
+                                batch_tensor, batch_labels, batch_lengths, batch_y = batch_tensor.cuda(), batch_labels.cuda(), batch_lengths.cuda(), batch_y.cuda()
+                            # end if
+
+                            # Zero grad
+                            rnn.zero_grad()
+
+                            # Forward
+                            model_outputs = rnn(batch_tensor, batch_lengths)
+
+                            # Loss summation
+                            loss = 0
+
+                            # Loss for each sample
+                            for i in range(model_outputs.size(0)):
+                                # Seq. length
+                                seq_length = batch_lengths[i]
+                                loss += loss_function(model_outputs[i, :sequence_length],
+                                                      batch_labels[i, :sequence_length])
+                            # end for
+
+                            # Backward and step
+                            loss.backward()
+
+                            # Show gradient
+                            if i == 1349:
+                                for p in rnn.parameters():
+                                    print(u'gradient:{}'.format(p.grad))
+                                # end for
+                            # end if
+
+                            # Step
+                            optimizer.step()
+
+                            # Add
+                            training_loss += loss.item()
+                            training_total += len(batch_list)
+                        # end if
+
+                        # Create list
+                        batch_list = list()
+
+                        # Add to list
+                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                    else:
+                        # Add to list
+                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                    # end if
+                # end for
+
+                # Counters
+                success = 0.0
+                count = 0.0
+                local_success = 0.0
+                local_count = 0.0
+
+                # Evaluation
+                rnn.eval()
+    
+                # Get test data for this fold
+                for i, data in enumerate(reuters_loader_test):
+                    # Inputs and labels
+                    inputs, labels, _ = data
+
+                    # Time labels
+                    time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
+
+                    # Sequences length
+                    sequence_length = inputs.size(1)
+
+                    # Batch
+                    if i % args.batch_size == 0 or i == 149:
+                        if i != 0:
+                            if i == 149:
+                                batch_list.append((inputs, time_labels, sequence_length, labels))
+                            # end if
+
+                            # Sort list
+                            batch_list.sort(key=lambda tup: tup[2], reverse=True)
+
+                            # Transformation to tensors
+                            batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
+
+                            # Variable and CUDA
+                            batch_tensor, batch_labels, batch_lengths, batch_y = Variable(batch_tensor), Variable(
+                                batch_labels), Variable(batch_lengths), Variable(batch_y)
+                            if args.cuda:
+                                batch_tensor, batch_labels, batch_lengths, batch_y = batch_tensor.cuda(), batch_labels.cuda(), batch_lengths.cuda(), batch_y.cuda()
+                            # end if
+
+                            # Forward
+                            model_outputs = rnn(batch_tensor, batch_lengths)
+
+                            # Loss summation
+                            loss = 0
+
+                            # Loss for each sample
+                            for i in range(model_outputs.size(0)):
+                                # Seq. length
+                                seq_length = batch_lengths[i]
+                                loss += loss_function(model_outputs[i, :sequence_length],
+                                                      batch_labels[i, :sequence_length])
+                                _, pred = torch.max(torch.mean(model_outputs[i, :sequence_length], dim=0), dim=0)
+                                if pred.item() == batch_y[i].item():
+                                    success += 1.0
+                                # end if
+                                count += 1.0
+                            # end for
+
+                            # Add loss
+                            test_loss += loss.item()
+                            test_total += len(batch_list)
+                        # end if
+
+                        # Create list
+                        batch_list = list()
+
+                        # Add to list
+                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                    else:
+                        # Add to list
+                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                    # end if
+                # end for
+    
+                # Compute accuracy
+                if args.measure == 'global':
+                    accuracy = success / count * 100.0
+                else:
+                    accuracy = local_success / local_count * 100.0
+                # end if
+    
+                # Print success rate
+                xp.add_result(accuracy)
+
+                # Print and save loss
+                print(u"Epoch {}, training loss {} ({}), test loss {} ({}), accuracy {}".format(
+                    epoch,
+                    training_loss / training_total,
+                    training_total,
+                    test_loss / test_total,
+                    test_total,
+                    accuracy
+                ))
+            # end for
         # end for
     # end for
 
