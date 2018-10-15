@@ -52,8 +52,7 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
         return torchlanguage.transforms.Compose([
             torchlanguage.transforms.PartOfSpeech(model='en'),
             torchlanguage.transforms.ToIndex(start_ix=1),
-            torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-            torchlanguage.transforms.Reshape((-1, learning_window))
+            torchlanguage.transforms.Reshape((-1))
         ])
     # ## Function words
     elif "fw" in feature:
@@ -67,8 +66,9 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.FunctionWord(model=lang),
                 torchlanguage.transforms.ToIndex(start_ix=1),
-                torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                torchlanguage.transforms.Reshape((-1, learning_window))
+                torchlanguage.transforms.Reshape((-1))
+                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
+                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Word Vector
@@ -78,14 +78,16 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.Token(model=lang),
                 torchlanguage.transforms.GensimModel(
                     model_path=os.path.join(path, 'word2vec', "embedding.en.bin")
-                )
+                ),
+                torchlanguage.transforms.Reshape((-1, 300))
             ])
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Token(model=lang),
                 torchlanguage.transforms.ToIndex(start_ix=1),
-                torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                torchlanguage.transforms.Reshape((-1, learning_window))
+                torchlanguage.transforms.Reshape((-1))
+                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
+                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character embedding
@@ -103,8 +105,9 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character(),
                 torchlanguage.transforms.ToIndex(start_ix=1),
-                torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                torchlanguage.transforms.Reshape((-1, learning_window))
+                torchlanguage.transforms.Reshape((-1))
+                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
+                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character 2-gram embedding
@@ -122,8 +125,9 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character2Gram(overlapse=True),
                 torchlanguage.transforms.ToIndex(start_ix=1),
-                torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                torchlanguage.transforms.Reshape((-1, learning_window))
+                torchlanguage.transforms.Reshape((-1))
+                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
+                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character 3-gram embedding
@@ -141,8 +145,9 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character3Gram(overlapse=True),
                 torchlanguage.transforms.ToIndex(start_ix=1),
-                torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                torchlanguage.transforms.Reshape((-1, learning_window))
+                torchlanguage.transforms.Reshape((-1))
+                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
+                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     else:
