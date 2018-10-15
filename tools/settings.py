@@ -25,3 +25,19 @@ pretrain_authors = [a for a in authors if a not in train_authors]
 # Glove settings
 glove_embedding_dim = 300
 
+# Length
+pos_length = 1356
+fw_length = 477
+wv_length = 1356
+c1_length = 6901
+c2_length = 6900
+c3_length = 6899
+
+# Voc size
+voc_size = dict()
+voc_size['pos'] = 17
+voc_size['fw'] = 193
+voc_size['wv'] = 27396
+voc_size['c1'] = 85
+voc_size['c2'] = 2764
+voc_size['c3'] = 22097
