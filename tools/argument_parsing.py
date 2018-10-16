@@ -74,7 +74,9 @@ def parser_training():
 
     # Experiment output parameters
     args.add_argument(command="--epoch", name="epoch", type=int, help="How many epoch",
-                      extended=False, required=False, default=300)
+                      extended=False, required=False, default=30)
+    args.add_argument(command="--early-stopping", name="early_stopping", type=int, help="How many epoch to wait if no improvement?",
+                      extended=False, required=False, default=30)
     args.add_argument(command="--window-size", name="window_size", type=str, help="Window size for prediction",
                       extended=True, required=False, default=0)
     args.add_argument(command="--measure", name="measure", type=str, help="Which measure to test (global/local)", extended=False, required=False, default='global')
