@@ -92,7 +92,7 @@ class RNN(nn.Module):
     # end init_hidden
 
     # Forward
-    def forward(self, x, x_lengths):
+    def forward(self, x, x_lengths, reset_hidden=True):
         """
         Forward pass
         :param x:
@@ -102,7 +102,9 @@ class RNN(nn.Module):
         batch_size, seq_len, embedding_dim = x.size()
 
         # Init hiddens
-        self.hidden = self.init_hidden(batch_size)
+        if reset_hidden:
+            self.hidden = self.init_hidden(batch_size)
+        # end if
 
         # Pack to hide padded item to RNN
         x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
