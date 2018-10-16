@@ -94,8 +94,40 @@ class EmbRNN(nn.Module):
         # end if
     # end init_hidden
 
+    # Mask hidden layers
+    def mask_hidden(self, hidden, mask):
+        """
+        Mask hidden layers
+        :param mask:
+        :return:
+        """
+        if self.rnn_type == "lstm":
+            return (hidden[0][:, mask, :], hidden[1][:, mask, :])
+        else:
+            return hidden[:, mask, :]
+        # end if
+    # end mask_hidden
+
+    # Set mash hidden
+    def set_mask_hidden(self, hidden, mask):
+        """
+        Set mask hidden
+        :param hidden:
+        :param mask:
+        :return:
+        """
+        if self.rnn_type == 'lstm':
+            h, c = self.hidden
+            h[:, mask, :] = hidden[0]
+            c[:, mask, :] = hidden[1]
+            self.hidden = (h, c)
+        else:
+            self.hidden[:, mask, :] = hidden
+        # end if
+    # end if
+
     # Forward
-    def forward(self, x, x_lengths):
+    def forward(self, x, x_lengths, reset_hidden=True):
         """
         Forward pass
         :param x:
@@ -105,7 +137,9 @@ class EmbRNN(nn.Module):
         batch_size, seq_len = x.size()
 
         # Init hiddens
-        self.hidden = self.init_hidden(batch_size)
+        if reset_hidden:
+            self.hidden = self.init_hidden(batch_size)
+        # end if
 
         # Embedding
         x = self.embedding_layer(x)
