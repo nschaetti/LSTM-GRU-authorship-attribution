@@ -143,14 +143,14 @@ for space in param_space:
                     # Time labels
                     time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
 
-                    # Sequences length
-                    sequence_length = inputs.size(1)
+                    # Input length
+                    input_length = inputs.size(1)
 
                     # Batch
                     if i % args.batch_size == 0 or i == 1349:
                         if i != 0:
                             if i == 1349:
-                                batch_list.append((inputs, time_labels, sequence_length, labels))
+                                batch_list.append((inputs, time_labels, input_length, labels))
                             # end if
 
                             # Sort list
@@ -159,55 +159,67 @@ for space in param_space:
                             # Transformation to tensors
                             batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
 
-                            # Variable and CUDA
-                            batch_tensor, batch_labels, batch_lengths, batch_y = Variable(batch_tensor), Variable(batch_labels), Variable(batch_lengths), Variable(batch_y)
-                            if args.cuda:
-                                batch_tensor, batch_labels, batch_lengths, batch_y = batch_tensor.cuda(), batch_labels.cuda(), batch_lengths.cuda(), batch_y.cuda()
-                            # end if
+                            # Max sequence length
+                            for i in range(0, batch_tensor.size(1), args.max_length):
+                                # Sub. sequence
+                                sequence_tensor = batch_tensor[:, i:i+args.max_length]
+                                sequence_labels = batch_labels[:, i:i+args.max_length]
+                                sequence_length = batch_lengths.clone()
+                                sequence_length[sequence_length.gt(args.max_length)] = args.max_length
 
-                            # Zero grad
-                            rnn.zero_grad()
+                                # Select only sequence length > 0
+                                sequence_mask = sequence_length.gt(0)
+                                sequence_tensor = sequence_tensor[sequence_mask]
+                                sequence_labels = sequence_labels[sequence_mask]
+                                sequence_length = sequence_length[sequence_mask]
 
-                            # Forward
-                            model_outputs = rnn(batch_tensor, batch_lengths)
+                                # Variable and CUDA
+                                sequence_tensor, sequence_labels, sequence_length = Variable(sequence_tensor), Variable(sequence_labels), Variable(sequence_length)
+                                if args.cuda:
+                                    sequence_tensor, sequence_labels, sequence_length = sequence_tensor.cuda(), sequence_labels.cuda(), sequence_length.cuda()
+                                # end if
 
-                            # Loss summation
-                            loss = 0
+                                # Zero grad
+                                rnn.zero_grad()
 
-                            # Loss for each sample
-                            for i in range(model_outputs.size(0)):
-                                # Seq. length
-                                seq_length = batch_lengths[i]
-                                loss += loss_function(model_outputs[i, :sequence_length],
-                                                      batch_labels[i, :sequence_length])
-                            # end for
+                                # Forward
+                                model_outputs = rnn(sequence_tensor, sequence_length)
 
-                            # Backward and step
-                            loss.backward()
+                                # Loss summation
+                                loss = 0
 
-                            # Show gradient
-                            if i == 1349:
-                                for p in rnn.parameters():
-                                    print(u'gradient:{}'.format(p.grad))
+                                # Loss for each sample
+                                for i in range(model_outputs.size(0)):
+                                    # Seq. length
+                                    seq_length = sequence_length[i]
+                                    loss += loss_function(model_outputs[i, :seq_length],
+                                                          sequence_labels[i, :seq_length])
                                 # end for
+
+                                # Backward and step
+                                loss.backward()
+
+                                # Step
+                                optimizer.step()
+
+                                # Add
+                                training_loss += loss.item()
+                                training_total += sequence_tensor.size(0)
+
+                                # Remove sequence length
+                                batch_lengths -= args.max_length
+                                batch_lengths[batch_lengths.lt(0)] = 0
                             # end if
-
-                            # Step
-                            optimizer.step()
-
-                            # Add
-                            training_loss += loss.item()
-                            training_total += len(batch_list)
                         # end if
 
                         # Create list
                         batch_list = list()
 
                         # Add to list
-                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                        batch_list.append((inputs, time_labels, input_length, labels))
                     else:
                         # Add to list
-                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                        batch_list.append((inputs, time_labels, input_length, labels))
                     # end if
                 # end for
 
@@ -229,13 +241,13 @@ for space in param_space:
                     time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
 
                     # Sequences length
-                    sequence_length = inputs.size(1)
+                    input_length = inputs.size(1)
 
                     # Batch
-                    if i % args.batch_size == 0 or i == 149:
+                    if i % args.test_batch_size == 0 or i == 149:
                         if i != 0:
                             if i == 149:
-                                batch_list.append((inputs, time_labels, sequence_length, labels))
+                                batch_list.append((inputs, time_labels, input_length, labels))
                             # end if
 
                             # Sort list
@@ -261,9 +273,9 @@ for space in param_space:
                             for i in range(model_outputs.size(0)):
                                 # Seq. length
                                 seq_length = batch_lengths[i]
-                                loss += loss_function(model_outputs[i, :sequence_length],
-                                                      batch_labels[i, :sequence_length])
-                                _, pred = torch.max(torch.mean(model_outputs[i, :sequence_length], dim=0), dim=0)
+                                loss += loss_function(model_outputs[i, :seq_length],
+                                                      batch_labels[i, :seq_length])
+                                _, pred = torch.max(torch.mean(model_outputs[i, :seq_length], dim=0), dim=0)
                                 if pred.item() == batch_y[i].item():
                                     success += 1.0
                                 # end if
@@ -279,10 +291,10 @@ for space in param_space:
                         batch_list = list()
 
                         # Add to list
-                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                        batch_list.append((inputs, time_labels, input_length, labels))
                     else:
                         # Add to list
-                        batch_list.append((inputs, time_labels, sequence_length, labels))
+                        batch_list.append((inputs, time_labels, input_length, labels))
                     # end if
                 # end for
     
