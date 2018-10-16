@@ -59,8 +59,12 @@ def parser_training():
                       default="1")
     args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
                       default='~/Projets/TURING/Datasets/', extended=False)
-    args.add_argument(command="--batch-size", name="batch_size", type=float, help="Size of the batches",
+    args.add_argument(command="--batch-size", name="batch_size", type=int, help="Size of the batches",
                       default=64, extended=False)
+    args.add_argument(command="--test-batch-size", name="test_batch_size", type=int, help="Size of the test batches",
+                      default=64, extended=False)
+    args.add_argument(command="--max-length", name="max_length", type=int, help="Maximum sequence length",
+                      required=True, extended=False)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
