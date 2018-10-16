@@ -27,11 +27,13 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features, settings, rnn
+from tools import argument_parsing, dataset, functions, features, settings
+from tools import rnn as rnn_func
 import matplotlib.pyplot as plt
 from models import *
 from torch import optim
 import torch.nn as nn
+import os
 
 
 ####################################################
@@ -59,7 +61,6 @@ for space in param_space:
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(
         feature,
-        learning_window,
         args.pretrained,
         args.embedding_path,
         lang
@@ -99,13 +100,13 @@ for space in param_space:
             # Choose the right transformer
             reutersc50_dataset.transform = features.create_transformer(
                 feature,
-                learning_window,
                 args.pretrained,
-                args.embedding_path, lang
+                args.embedding_path,
+                lang
             )
 
             # Model
-            rnn = rnn.create_model(
+            rnn = rnn_func.create_model(
                 feature=feature,
                 pretrained=args.pretrained,
                 cuda=args.cuda,
@@ -121,11 +122,15 @@ for space in param_space:
             # Optimizer
             optimizer = optim.SGD(rnn.parameters(), lr=0.001, momentum=0.9)
 
+            # Best model
+            best_acc = 0.0
+            no_improv = 0
+
             # Loss function
             loss_function = nn.CrossEntropyLoss()
 
             # For each epoch
-            for epoch in range(args.epoch):
+            for epoch in range(10000):
                 # Total losses
                 training_loss = 0.0
                 training_total = 0.0
@@ -192,6 +197,7 @@ for space in param_space:
                                 for i in range(model_outputs.size(0)):
                                     # Seq. length
                                     seq_length = sequence_length[i]
+
                                     loss += loss_function(model_outputs[i, :seq_length],
                                                           sequence_labels[i, :seq_length])
                                 # end for
@@ -299,33 +305,51 @@ for space in param_space:
                 # end for
     
                 # Compute accuracy
-                if args.measure == 'global':
-                    accuracy = success / count * 100.0
-                else:
-                    accuracy = local_success / local_count * 100.0
-                # end if
-    
-                # Print success rate
-                xp.add_result(accuracy)
+                accuracy = success / count * 100.0
 
                 # Print and save loss
-                print(u"Epoch {}, training loss {} ({}), test loss {} ({}), accuracy {}".format(
+                """print(u"Epoch {}, training loss {} ({}), test loss {} ({}), accuracy {}".format(
                     epoch,
                     training_loss / training_total,
                     training_total,
                     test_loss / test_total,
                     test_total,
                     accuracy
-                ))
+                ))"""
+
+                # Save if best
+                if epoch > args.epoch:
+                    if accuracy > best_acc:
+                        best_acc = accuracy
+                        print(u"Saving model with best accuracy {}".format(best_acc))
+                        torch.save(
+                            rnn.state_dict(),
+                            open(os.path.join(args.output, args.name, u"rnn." + str(k) + u".pth"), 'wb')
+                        )
+                        torch.save(
+                            reutersc50_dataset.transform.transforms[1].token_to_ix,
+                            open(os.path.join(args.output, args.name,u"rnn." + str(k) + u".voc.pth"), 'wb')
+                        )
+
+                        # Improvement
+                        no_improv = 0
+                    else:
+                        # No improvement
+                        no_improv += 1
+
+                        # Early stopping
+                        if no_improv > args.early_stopping:
+                            # Save result
+                            xp.add_result(best_acc)
+
+                            # End
+                            break
+                        # end if
+                    # end if
+                # end if
             # end for
         # end for
     # end for
-
-    # Save certainty
-    if args.certainty != "":
-        print(certainty_data)
-        np.save(open(args.certainty, "wb"), certainty_data)
-    # end if
 
     # Last space
     last_space = space
