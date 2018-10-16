@@ -41,6 +41,7 @@ voc_size['wv'] = 27396
 voc_size['c1'] = 85
 voc_size['c2'] = 2764
 voc_size['c3'] = 22097
+voc_size['ce'] = 85
 
 # Input dim
 input_dims = dict()
@@ -49,3 +50,6 @@ input_dims['fw'] = 300
 input_dims['c1'] = 10
 input_dims['c2'] = 30
 input_dims['c3'] = 60
+
+# Character Encoder
+ce_text_length = 15
