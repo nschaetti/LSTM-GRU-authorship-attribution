@@ -84,7 +84,7 @@ class EmbRNN(nn.Module):
 
             # To GPU
             if next(self.parameters()).is_cuda:
-                hidden = hidden.gpu()
+                hidden = hidden.cuda()
             # end if
 
             # To variable
@@ -135,7 +135,7 @@ class EmbRNN(nn.Module):
         """
         # Sizes
         batch_size, seq_len = x.size()
-
+        # print(x.size())
         # Init hiddens
         if reset_hidden:
             self.hidden = self.init_hidden(batch_size)
