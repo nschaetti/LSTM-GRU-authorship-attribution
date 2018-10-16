@@ -25,16 +25,29 @@ def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, 
             batch_size=batch_size
         )
     else:
-        # Model
-        rnn = EmbRNN(
-            embedding_dim=embedding_dim,
-            hidden_dim=hidden_dim,
-            vocab_size=vocab_size,
-            rnn_type=rnn_type,
-            num_layers=num_layers,
-            dropout=dropout,
-            batch_size=batch_size
-        )
+        if "ce" in feature:
+            rnn = CNNRNN(
+                embedding_dim=embedding_dim,
+                vocab_size=vocab_size,
+                text_length=settings.ce_text_length,
+                hidden_dim=hidden_dim,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_size=batch_size
+            )
+        else:
+            # Model
+            rnn = EmbRNN(
+                embedding_dim=embedding_dim,
+                hidden_dim=hidden_dim,
+                vocab_size=vocab_size,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_size=batch_size
+            )
+        # end if
     # end if
 
     # CUDA
