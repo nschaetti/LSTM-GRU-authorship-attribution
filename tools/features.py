@@ -38,7 +38,7 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
 
 
 # Create transformer
-def create_transformer(feature, learning_window, pretrained=False, path="", lang="en_vectors_web_lg"):
+def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_lg"):
     """
     Create the transformer
     :param feature:
@@ -67,8 +67,6 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.FunctionWord(model=lang),
                 torchlanguage.transforms.ToIndex(start_ix=1),
                 torchlanguage.transforms.Reshape((-1))
-                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Word Vector
@@ -86,8 +84,6 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.Token(model=lang),
                 torchlanguage.transforms.ToIndex(start_ix=1),
                 torchlanguage.transforms.Reshape((-1))
-                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character embedding
@@ -106,8 +102,6 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.Character(),
                 torchlanguage.transforms.ToIndex(start_ix=1),
                 torchlanguage.transforms.Reshape((-1))
-                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character 2-gram embedding
@@ -126,8 +120,6 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.Character2Gram(overlapse=True),
                 torchlanguage.transforms.ToIndex(start_ix=1),
                 torchlanguage.transforms.Reshape((-1))
-                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
     # ## Character 3-gram embedding
@@ -146,10 +138,16 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
                 torchlanguage.transforms.Character3Gram(overlapse=True),
                 torchlanguage.transforms.ToIndex(start_ix=1),
                 torchlanguage.transforms.Reshape((-1))
-                # torchlanguage.transforms.ToMultipleLength(length_multi=learning_window),
-                # torchlanguage.transforms.Reshape((-1, learning_window))
             ])
         # end if
+    # ## Character CNN
+    elif "ce" in feature:
+        return torchlanguage.transforms.Compose([
+            torchlanguage.transforms.Character(),
+            torchlanguage.transforms.ToIndex(),
+            torchlanguage.transforms.ToNGram(n=settings.ce_text_length, overlapse=False),
+            torchlanguage.transforms.Reshape((-1, settings.ce_text_length))
+        ])
     else:
         raise NotImplementedError(u"Feature type {} not implemented".format(feature))
     # end if
