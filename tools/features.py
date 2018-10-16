@@ -116,7 +116,7 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             token_to_ix, embedding_weights = load_character_embedding(path)
             embedding_dim = embedding_weights.size(1)
             return torchlanguage.transforms.Compose([
-                torchlanguage.transforms.Character2Gram(overlapse=True),
+                torchlanguage.transforms.Character2Gram(overlapse=False),
                 torchlanguage.transforms.ToIndex(token_to_ix=token_to_ix),
                 torchlanguage.transforms.Embedding(weights=embedding_weights, voc_size=len(token_to_ix)),
                 torchlanguage.transforms.Reshape((-1, embedding_dim))
@@ -136,7 +136,7 @@ def create_transformer(feature, learning_window, pretrained=False, path="", lang
             token_to_ix, embedding_weights = load_character_embedding(path)
             embedding_dim = embedding_weights.size(1)
             return torchlanguage.transforms.Compose([
-                torchlanguage.transforms.Character3Gram(overlapse=True),
+                torchlanguage.transforms.Character3Gram(overlapse=False),
                 torchlanguage.transforms.ToIndex(token_to_ix=token_to_ix),
                 torchlanguage.transforms.Embedding(weights=embedding_weights, voc_size=len(token_to_ix)),
                 torchlanguage.transforms.Reshape((-1, embedding_dim))
