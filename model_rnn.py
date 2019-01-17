@@ -25,15 +25,97 @@
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
-import echotorch.nn as etnn
-import echotorch.utils
 from tools import argument_parsing, dataset, functions, features, settings
 from tools import rnn as rnn_func
-import matplotlib.pyplot as plt
-from models import *
 from torch import optim
 import torch.nn as nn
 import os
+
+
+# Test a model
+def test_model(reuters_load_set):
+    """
+    Test a model
+    :param reuters_load_set:
+    :return:
+    """
+    # Counters
+    success = 0.0
+    count = 0.0
+    test_loss = 0.0
+    test_total = 0.0
+
+    # Get test data for this fold
+    for i, data in enumerate(reuters_load_set):
+        # Inputs and labels
+        inputs, labels, _ = data
+
+        # Time labels
+        time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
+
+        # Sequences length
+        input_length = inputs.size(1)
+
+        # Batch
+        if i % args.test_batch_size == 0 or i == 149:
+            if i != 0:
+                if i == 149:
+                    batch_list.append((inputs, time_labels, input_length, labels))
+                # end if
+
+                # Sort list
+                batch_list.sort(key=lambda tup: tup[2], reverse=True)
+
+                # Transformation to tensors
+                batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
+
+                # Variable and CUDA
+                batch_tensor, batch_labels, batch_lengths, batch_y = Variable(batch_tensor), Variable(
+                    batch_labels), Variable(batch_lengths), Variable(batch_y)
+                if args.cuda:
+                    batch_tensor, batch_labels, batch_lengths, batch_y = batch_tensor.cuda(), batch_labels.cuda(), batch_lengths.cuda(), batch_y.cuda()
+                # end if
+
+                # Forward
+                model_outputs = rnn(batch_tensor, batch_lengths)
+
+                # Loss summation
+                loss = 0
+
+                # Loss for each sample
+                for i in range(model_outputs.size(0)):
+                    # Seq. length
+                    seq_length = batch_lengths[i]
+                    loss += loss_function(model_outputs[i, :seq_length],
+                                          batch_labels[i, :seq_length])
+                    _, pred = torch.max(torch.mean(model_outputs[i, :seq_length], dim=0), dim=0)
+                    if pred.item() == batch_y[i].item():
+                        success += 1.0
+                    # end if
+                    count += 1.0
+                # end for
+
+                # Add loss
+                test_loss += loss.item()
+                test_total += len(batch_list)
+            # end if
+
+            # Create list
+            batch_list = list()
+
+            # Add to list
+            batch_list.append((inputs, time_labels, input_length, labels))
+        else:
+            # Add to list
+            batch_list.append((inputs, time_labels, input_length, labels))
+        # end if
+    # end for
+
+    # Compute accuracy
+    accuracy = success / count * 100.0
+
+    return accuracy, test_loss, test_total
+# end test_model
 
 
 ####################################################
@@ -45,7 +127,7 @@ import os
 args, use_cuda, param_space, xp = argument_parsing.parser_training()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size)
+reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(args.dataset_size)
 
 # Print authors
 xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
@@ -134,8 +216,6 @@ for space in param_space:
                 # Total losses
                 training_loss = 0.0
                 training_total = 0.0
-                test_loss = 0.0
-                test_total = 0.0
 
                 # Training
                 rnn.train()
@@ -232,95 +312,27 @@ for space in param_space:
                 # Counters
                 success = 0.0
                 count = 0.0
-                local_success = 0.0
-                local_count = 0.0
 
                 # Evaluation
                 rnn.eval()
     
-                # Get test data for this fold
-                for i, data in enumerate(reuters_loader_test):
-                    # Inputs and labels
-                    inputs, labels, _ = data
-
-                    # Time labels
-                    time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
-
-                    # Sequences length
-                    input_length = inputs.size(1)
-
-                    # Batch
-                    if i % args.test_batch_size == 0 or i == 149:
-                        if i != 0:
-                            if i == 149:
-                                batch_list.append((inputs, time_labels, input_length, labels))
-                            # end if
-
-                            # Sort list
-                            batch_list.sort(key=lambda tup: tup[2], reverse=True)
-
-                            # Transformation to tensors
-                            batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
-
-                            # Variable and CUDA
-                            batch_tensor, batch_labels, batch_lengths, batch_y = Variable(batch_tensor), Variable(
-                                batch_labels), Variable(batch_lengths), Variable(batch_y)
-                            if args.cuda:
-                                batch_tensor, batch_labels, batch_lengths, batch_y = batch_tensor.cuda(), batch_labels.cuda(), batch_lengths.cuda(), batch_y.cuda()
-                            # end if
-
-                            # Forward
-                            model_outputs = rnn(batch_tensor, batch_lengths)
-
-                            # Loss summation
-                            loss = 0
-
-                            # Loss for each sample
-                            for i in range(model_outputs.size(0)):
-                                # Seq. length
-                                seq_length = batch_lengths[i]
-                                loss += loss_function(model_outputs[i, :seq_length],
-                                                      batch_labels[i, :seq_length])
-                                _, pred = torch.max(torch.mean(model_outputs[i, :seq_length], dim=0), dim=0)
-                                if pred.item() == batch_y[i].item():
-                                    success += 1.0
-                                # end if
-                                count += 1.0
-                            # end for
-
-                            # Add loss
-                            test_loss += loss.item()
-                            test_total += len(batch_list)
-                        # end if
-
-                        # Create list
-                        batch_list = list()
-
-                        # Add to list
-                        batch_list.append((inputs, time_labels, input_length, labels))
-                    else:
-                        # Add to list
-                        batch_list.append((inputs, time_labels, input_length, labels))
-                    # end if
-                # end for
-    
-                # Compute accuracy
-                accuracy = success / count * 100.0
+                # Test model
+                dev_accuracy, dev_loss, dev_total = test_model(reuters_loader_dev)
 
                 # Print and save loss
-                """print(u"Epoch {}, training loss {} ({}), test loss {} ({}), accuracy {}".format(
+                print(u"Epoch {}, training loss {} ({}), dev loss {} ({}), dev accuracy {}".format(
                     epoch,
                     training_loss / training_total,
                     training_total,
-                    test_loss / test_total,
-                    test_total,
-                    accuracy
-                ))"""
+                    dev_loss / dev_total,
+                    dev_total,
+                    dev_accuracy
+                ))
 
                 # Save if best
                 if epoch > args.epoch:
-                    if accuracy > best_acc:
-                        best_acc = accuracy
+                    if dev_accuracy > best_acc:
+                        best_acc = dev_accuracy
                         print(u"Saving model with best accuracy {}".format(best_acc))
                         torch.save(
                             rnn.state_dict(),
@@ -348,6 +360,16 @@ for space in param_space:
                     # end if
                 # end if
             # end for
+
+            # Now we test on the test set
+            test_accuracy, test_loss, test_total = test_model(reuters_loader_dev)
+
+            # Print and save loss
+            print(u"Test loss {} ({}), Test accuracy {}".format(
+                test_loss / test_total,
+                test_total,
+                test_accuracy
+            ))
         # end for
     # end for
 

@@ -38,18 +38,26 @@ def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level
 
     # Reuters C50 dataset training
     reuters_loader_train = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidation(reutersc50_dataset),
+        torchlanguage.utils.CrossValidationWithDev(reutersc50_dataset, train='train'),
+        batch_size=1,
+        shuffle=shuffle
+    )
+
+    # Reuters C50 dataset dev
+    reuters_loader_dev = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(reutersc50_dataset, train='dev'),
         batch_size=1,
         shuffle=shuffle
     )
 
     # Reuters C50 dataset test
     reuters_loader_test = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidation(reutersc50_dataset, train=False),
+        torchlanguage.utils.CrossValidationWithDev(reutersc50_dataset, train='test'),
         batch_size=1,
         shuffle=shuffle
     )
-    return reutersc50_dataset, reuters_loader_train, reuters_loader_test
+
+    return reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test
 # end load_dataset
 
 
