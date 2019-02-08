@@ -57,7 +57,7 @@ def test_model(reuters_load_set):
         input_length = inputs.size(1)
 
         # Batch
-        if i % args.test_batch_size == 0 or i == 149:
+        if i % args.test_batch_size == 0 or i == 74:
             if i != 0:
                 if i == 149:
                     batch_list.append((inputs, time_labels, input_length, labels))
@@ -77,19 +77,19 @@ def test_model(reuters_load_set):
                 # end if
 
                 # Forward
-                model_outputs = rnn(batch_tensor, batch_lengths)
+                model_outputs = rnn(batch_tensor, batch_lengths, reset_hidden=True)
 
                 # Loss summation
                 loss = 0
 
                 # Loss for each sample
-                for i in range(model_outputs.size(0)):
+                for j in range(model_outputs.size(0)):
                     # Seq. length
-                    seq_length = batch_lengths[i]
-                    loss += loss_function(model_outputs[i, :seq_length],
-                                          batch_labels[i, :seq_length])
-                    _, pred = torch.max(torch.mean(model_outputs[i, :seq_length], dim=0), dim=0)
-                    if pred.item() == batch_y[i].item():
+                    seq_length = batch_lengths[j]
+                    loss += loss_function(model_outputs[j, :seq_length],
+                                          batch_labels[j, :seq_length])
+                    _, pred = torch.max(torch.mean(model_outputs[j, :seq_length], dim=0), dim=0)
+                    if pred.item() == batch_y[j].item():
                         success += 1.0
                     # end if
                     count += 1.0
@@ -202,14 +202,14 @@ for space in param_space:
             )
 
             # Optimizer
-            optimizer = optim.SGD(rnn.parameters(), lr=0.001, momentum=0.9)
+            optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
 
             # Best model
             best_acc = 0.0
             no_improv = 0
 
             # Loss function
-            loss_function = nn.CrossEntropyLoss()
+            loss_function = nn.NLLLoss()
 
             # For each epoch
             for epoch in range(10000):
@@ -244,11 +244,15 @@ for space in param_space:
                             # Transformation to tensors
                             batch_tensor, batch_labels, batch_lengths, batch_y = functions.list_to_tensors(batch_list)
 
+                            # Loss summation
+                            loss = 0
+                            sequence_count = 0.0
+
                             # Max sequence length
-                            for i in range(0, batch_tensor.size(1), args.max_length):
+                            for j in range(0, batch_tensor.size(1), args.max_length):
                                 # Sub. sequence
-                                sequence_tensor = batch_tensor[:, i:i+args.max_length]
-                                sequence_labels = batch_labels[:, i:i+args.max_length]
+                                sequence_tensor = batch_tensor[:, j:j+args.max_length]
+                                sequence_labels = batch_labels[:, j:j+args.max_length]
                                 sequence_length = batch_lengths.clone()
                                 sequence_length[sequence_length.gt(args.max_length)] = args.max_length
 
@@ -266,36 +270,52 @@ for space in param_space:
 
                                 # Zero grad
                                 rnn.zero_grad()
-
+                                # print(sequence_tensor.shape)
                                 # Forward
-                                model_outputs = rnn(sequence_tensor, sequence_length)
+                                if j == 0:
+                                    model_outputs = rnn(sequence_tensor, sequence_length, sequence_mask, reset_hidden=True)
+                                else:
+                                    model_outputs = rnn(sequence_tensor, sequence_length, sequence_mask, reset_hidden=False)
+                                # end if
 
                                 # Loss summation
-                                loss = 0
+                                # loss = 0
 
                                 # Loss for each sample
-                                for i in range(model_outputs.size(0)):
+                                for k in range(model_outputs.size(0)):
                                     # Seq. length
-                                    seq_length = sequence_length[i]
-
-                                    loss += loss_function(model_outputs[i, :seq_length],
-                                                          sequence_labels[i, :seq_length])
+                                    seq_length = sequence_length[k]
+                                    loss += loss_function(model_outputs[k, :seq_length],
+                                                          sequence_labels[k, :seq_length])
+                                    sequence_count += 1.0
                                 # end for
-
+                                """print(u"Batch {}, Sequence {}, loss {}".format(i, j, loss))
                                 # Backward and step
-                                loss.backward()
+                                if i < batch_tensor.size(1) - 1:
+                                    loss.backward(retain_graph=True)
+                                else:
+                                    loss.backward()
+                                # end if
 
                                 # Step
                                 optimizer.step()
 
                                 # Add
                                 training_loss += loss.item()
-                                training_total += sequence_tensor.size(0)
+                                training_total += sequence_tensor.size(0)"""
 
                                 # Remove sequence length
                                 batch_lengths -= args.max_length
                                 batch_lengths[batch_lengths.lt(0)] = 0
                             # end if
+                            # print(u"Batch {}, loss {} ({})".format(i, loss / sequence_count, sequence_count))
+                            # Backward and step
+                            loss.backward()
+                            optimizer.step()
+
+                            # Add
+                            training_loss += loss.item()
+                            training_total += sequence_count
                         # end if
 
                         # Create list
