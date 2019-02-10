@@ -161,7 +161,7 @@ for space in param_space:
     average_sample = np.array([])
 
     # Certainty data
-    certainty_data = np.zeros((2, args.n_samples * reutersc50_dataset.authors * 100))
+    certainty_data = np.zeros((2, args.n_samples * len(reutersc50_dataset.authors) * 100))
     certainty_index = 0
 
     # For each sample
