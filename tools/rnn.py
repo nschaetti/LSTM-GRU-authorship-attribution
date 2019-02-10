@@ -13,7 +13,7 @@ import torch.nn.utils as utils
 
 
 # Create model
-def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, vocab_size=100, rnn_type='lstm', num_layers=1, dropout=False, batch_size=64):
+def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, vocab_size=100, rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0, batch_size=64):
     # Feature
     if pretrained:
         rnn = RNN(
@@ -22,6 +22,7 @@ def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, 
             rnn_type=rnn_type,
             num_layers=num_layers,
             dropout=dropout,
+            output_dropout=output_dropout,
             batch_size=batch_size
         )
     else:
@@ -34,6 +35,7 @@ def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, 
                 rnn_type=rnn_type,
                 num_layers=num_layers,
                 dropout=dropout,
+                output_dropout=output_dropout,
                 batch_size=batch_size
             )
         else:
@@ -45,6 +47,7 @@ def create_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, 
                 rnn_type=rnn_type,
                 num_layers=num_layers,
                 dropout=dropout,
+                output_dropout=output_dropout,
                 batch_size=batch_size
             )
         # end if
