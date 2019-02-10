@@ -45,6 +45,9 @@ def test_model(reuters_load_set):
     test_loss = 0.0
     test_total = 0.0
 
+    # Number of samples
+    n_samples = len(reuters_load_set)
+
     # Get test data for this fold
     for i, data in enumerate(reuters_load_set):
         # Inputs and labels
@@ -55,11 +58,11 @@ def test_model(reuters_load_set):
 
         # Sequences length
         input_length = inputs.size(1)
-        print(i)
+
         # Batch
-        if i % args.test_batch_size == 0 or i == 149:
+        if i % args.test_batch_size == 0 or i == n_samples - 1:
             if i != 0:
-                if i == 149:
+                if i == n_samples - 1:
                     batch_list.append((inputs, time_labels, input_length, labels))
                 # end if
 
@@ -138,7 +141,7 @@ last_space = dict()
 # Iterate
 for space in param_space:
     # Params
-    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout = functions.get_params(space)
+    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout, output_dropout = functions.get_params(space)
 
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(
@@ -158,7 +161,7 @@ for space in param_space:
     average_sample = np.array([])
 
     # Certainty data
-    certainty_data = np.zeros((2, args.n_samples * 1500))
+    certainty_data = np.zeros((2, args.n_samples * reutersc50_dataset.authors * 100))
     certainty_index = 0
 
     # For each sample
@@ -198,6 +201,7 @@ for space in param_space:
                 rnn_type=rnn_type,
                 num_layers=num_layers,
                 dropout=dropout,
+                output_dropout=output_dropout,
                 batch_size=args.batch_size
             )
 
@@ -218,6 +222,9 @@ for space in param_space:
                 training_loss = 0.0
                 training_total = 0.0
 
+                # Number of samples
+                n_samples = len(reuters_loader_train)
+
                 # Training
                 rnn.train()
 
@@ -225,7 +232,7 @@ for space in param_space:
                 for i, data in enumerate(reuters_loader_train):
                     # Inputs and labels
                     inputs, labels, _ = data
-                    print(i)
+
                     # Time labels
                     time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
 
@@ -233,9 +240,9 @@ for space in param_space:
                     input_length = inputs.size(1)
 
                     # Batch
-                    if i % args.batch_size == 0 or i == 1159:
+                    if i % args.batch_size == 0 or i == n_samples - 1:
                         if i != 0:
-                            if i == 1159:
+                            if i == n_samples - 1:
                                 batch_list.append((inputs, time_labels, input_length, labels))
                             # end if
 
