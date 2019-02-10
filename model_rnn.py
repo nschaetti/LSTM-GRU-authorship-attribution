@@ -55,9 +55,9 @@ def test_model(reuters_load_set):
 
         # Sequences length
         input_length = inputs.size(1)
-
+        print(i)
         # Batch
-        if i % args.test_batch_size == 0 or i == 74:
+        if i % args.test_batch_size == 0 or i == 149:
             if i != 0:
                 if i == 149:
                     batch_list.append((inputs, time_labels, input_length, labels))
@@ -225,7 +225,7 @@ for space in param_space:
                 for i, data in enumerate(reuters_loader_train):
                     # Inputs and labels
                     inputs, labels, _ = data
-
+                    print(i)
                     # Time labels
                     time_labels = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
 
@@ -233,9 +233,9 @@ for space in param_space:
                     input_length = inputs.size(1)
 
                     # Batch
-                    if i % args.batch_size == 0 or i == 1349:
+                    if i % args.batch_size == 0 or i == 1159:
                         if i != 0:
-                            if i == 1349:
+                            if i == 1159:
                                 batch_list.append((inputs, time_labels, input_length, labels))
                             # end if
 
