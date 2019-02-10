@@ -202,7 +202,8 @@ for space in param_space:
             )
 
             # Optimizer
-            optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
+            # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
+            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.0001)
 
             # Best model
             best_acc = 0.0
@@ -212,7 +213,7 @@ for space in param_space:
             loss_function = nn.NLLLoss()
 
             # For each epoch
-            for epoch in range(10000):
+            for epoch in range(args.epoch):
                 # Total losses
                 training_loss = 0.0
                 training_total = 0.0
@@ -339,44 +340,28 @@ for space in param_space:
                 # Test model
                 dev_accuracy, dev_loss, dev_total = test_model(reuters_loader_dev)
 
-                # Print and save loss
-                print(u"Epoch {}, training loss {} ({}), dev loss {} ({}), dev accuracy {}".format(
+                # Print
+                xp.write(u"Epoch {}, training loss {} ({}), dev loss {} ({}), dev accuracy {}".format(
                     epoch,
                     training_loss / training_total,
                     training_total,
                     dev_loss / dev_total,
                     dev_total,
                     dev_accuracy
-                ))
+                ), log_level=5)
 
                 # Save if best
-                if epoch > args.epoch:
-                    if dev_accuracy > best_acc:
-                        best_acc = dev_accuracy
-                        print(u"Saving model with best accuracy {}".format(best_acc))
-                        torch.save(
-                            rnn.state_dict(),
-                            open(os.path.join(args.output, args.name, u"rnn." + str(k) + u".pth"), 'wb')
-                        )
+                if dev_accuracy > best_acc:
+                    best_acc = dev_accuracy
+                    torch.save(
+                        rnn.state_dict(),
+                        open(os.path.join(args.output, args.name, u"rnn." + str(k) + u".pth"), 'wb')
+                    )
+                    if not args.pretrained:
                         torch.save(
                             reutersc50_dataset.transform.transforms[1].token_to_ix,
-                            open(os.path.join(args.output, args.name,u"rnn." + str(k) + u".voc.pth"), 'wb')
+                            open(os.path.join(args.output, args.name, u"rnn." + str(k) + u".voc.pth"), 'wb')
                         )
-
-                        # Improvement
-                        no_improv = 0
-                    else:
-                        # No improvement
-                        no_improv += 1
-
-                        # Early stopping
-                        if no_improv > args.early_stopping:
-                            # Save result
-                            xp.add_result(best_acc)
-
-                            # End
-                            break
-                        # end if
                     # end if
                 # end if
             # end for
@@ -384,12 +369,8 @@ for space in param_space:
             # Now we test on the test set
             test_accuracy, test_loss, test_total = test_model(reuters_loader_dev)
 
-            # Print and save loss
-            print(u"Test loss {} ({}), Test accuracy {}".format(
-                test_loss / test_total,
-                test_total,
-                test_accuracy
-            ))
+            # Print success rate
+            xp.add_result(test_loss / test_total)
         # end for
     # end for
 
