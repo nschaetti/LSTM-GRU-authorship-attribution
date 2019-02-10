@@ -18,7 +18,7 @@ class EmbRNN(nn.Module):
     """
 
     # Constructor
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, n_authors=15, rnn_type='lstm', num_layers=1, dropout=True, batch_size=64):
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, n_authors=15, rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0, batch_size=64):
         """
         Constructor
         :param embedding_dim:
@@ -50,6 +50,9 @@ class EmbRNN(nn.Module):
 
         # Hidden state to outputs
         self.hidden2outputs = nn.Linear(hidden_dim, n_authors)
+
+        # Dropout
+        self.dropout_layer = nn.Dropout(p=output_dropout)
 
         # Init hiddens
         self.hidden = self.init_hidden(batch_size)
@@ -156,6 +159,9 @@ class EmbRNN(nn.Module):
         # View to (length, output size)
         x = x.contiguous()
         x = x.view((-1, self.hidden_dim))
+
+        # Dropout
+        x = self.dropout_layer(x)
 
         # Linear layer
         x = self.hidden2outputs(x)
