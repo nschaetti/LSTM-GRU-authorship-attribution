@@ -49,6 +49,7 @@ def parser_training():
                       required=True, extended=True)
     args.add_argument(command="--num-layers", name="num_layers", type=int, help="Number of recurrent layers", default=1, extended=True)
     args.add_argument(command="--dropout", name="dropout", type=float, help="Dropout", default=0, extended=True)
+    args.add_argument(command="--output-dropout", name="output-dropout", type=float, help="Output dropout", default=0, extended=True)
     args.add_argument(command="--feature", name="feature", type=str,
                       help="The text transformer to use (fw, pos, tag, wv, c1, c2, c3, cnn)", default='wv',
                       extended=True)
