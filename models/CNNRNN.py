@@ -18,7 +18,7 @@ class CNNRNN(nn.Module):
     """
 
     # Constructor
-    def __init__(self, embedding_dim, vocab_size, text_length, hidden_dim, n_authors=15, out_channels=(50, 50, 50), kernel_sizes=(3, 4, 5), rnn_type='lstm', num_layers=1, dropout=True, batch_size=64):
+    def __init__(self, embedding_dim, vocab_size, text_length, hidden_dim, n_authors=15, out_channels=(50, 50, 50), kernel_sizes=(3, 4, 5), rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0, batch_size=64):
         """
         Constructor
         :param embedding_dim:
@@ -45,6 +45,7 @@ class CNNRNN(nn.Module):
         self.kernel_sizes = kernel_sizes
         self.batch_size = batch_size
         self.n_authors = n_authors
+        self.output_dropout = output_dropout
 
         # Embeddings
         self.embedding_layer = nn.Embedding(vocab_size, embedding_dim)
@@ -80,6 +81,9 @@ class CNNRNN(nn.Module):
 
         # Hidden state to outputs
         self.hidden2outputs = nn.Linear(hidden_dim, n_authors)
+
+        # Dropout
+        self.dropout_layer = nn.Dropout(p=output_dropout)
 
         # Init hiddens
         self.hidden = self.init_hidden(batch_size)
