@@ -56,8 +56,9 @@ def get_params(space):
     rnn_type = space['rnn_type'][0][0]
     num_layers = int(space['num_layers'])
     dropout = float(space['dropout'])
+    output_dropout = float(space['output_dropout'])
 
-    return hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout
+    return hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout, output_dropout
 # end get_params
 
 
