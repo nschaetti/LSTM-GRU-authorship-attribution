@@ -16,7 +16,7 @@ class PretrainedRNN(nn.Module):
     """
 
     # Constructor
-    def __init__(self, pretrained_model, input_dim, hidden_dim, n_authors=15, rnn_type='lstm', num_layers=1, dropout=True):
+    def __init__(self, pretrained_model, input_dim, hidden_dim, n_authors=15, rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0):
         """
         Constructor
         :param pretrained_model:
@@ -36,6 +36,7 @@ class PretrainedRNN(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.rnn_type = rnn_type
+        self.output_dropout = output_dropout
 
         # RNN
         if rnn_type == 'lstm':
@@ -48,6 +49,9 @@ class PretrainedRNN(nn.Module):
 
         # Hidden state to outputs
         self.hidden2outputs = nn.Linear(hidden_dim, n_authors)
+
+        # Dropout
+        self.dropout_layer = nn.Dropout(p=output_dropout)
 
         # Init hiddens
         self.hidden = self.init_hidden()
@@ -84,8 +88,11 @@ class PretrainedRNN(nn.Module):
         # View to (length, output size)
         rnn_out = rnn_out.view((x.size(0), -1))
 
+        # Dropout
+        outputs = self.dropout_layer(rnn_out)
+
         # Author space
-        outputs = self.hidden2outputs(rnn_out)
+        outputs = self.hidden2outputs(outputs)
 
         # Author scores
         author_scores = F.log_softmax(outputs, dim=1)
