@@ -30,6 +30,7 @@ from tools import rnn as rnn_func
 from torch import optim
 import torch.nn as nn
 import os
+import gc
 
 
 # Test a model
@@ -89,8 +90,10 @@ def test_model(reuters_load_set):
                 for j in range(model_outputs.size(0)):
                     # Seq. length
                     seq_length = batch_lengths[j]
-                    loss += loss_function(model_outputs[j, :seq_length],
-                                          batch_labels[j, :seq_length])
+                    loss += loss_function(
+                        model_outputs[j, :seq_length],
+                        batch_labels[j, :seq_length]
+                    )
                     _, pred = torch.max(torch.mean(model_outputs[j, :seq_length], dim=0), dim=0)
                     if pred.item() == batch_y[j].item():
                         success += 1.0
@@ -207,7 +210,7 @@ for space in param_space:
 
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
-            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.0001)
+            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.001)
 
             # Best model
             best_acc = 0.0
@@ -281,45 +284,57 @@ for space in param_space:
                                 # print(sequence_tensor.shape)
                                 # Forward
                                 if j == 0:
-                                    model_outputs = rnn(sequence_tensor, sequence_length, sequence_mask, reset_hidden=True)
+                                    model_outputs = rnn(sequence_tensor, sequence_length, None, reset_hidden=True)
                                 else:
-                                    model_outputs = rnn(sequence_tensor, sequence_length, sequence_mask, reset_hidden=False)
+                                    model_outputs = rnn(sequence_tensor, sequence_length, None, reset_hidden=True)
                                 # end if
 
                                 # Loss summation
-                                # loss = 0
+                                loss = 0
 
                                 # Loss for each sample
                                 for k in range(model_outputs.size(0)):
                                     # Seq. length
                                     seq_length = sequence_length[k]
-                                    loss += loss_function(model_outputs[k, :seq_length],
-                                                          sequence_labels[k, :seq_length])
+                                    loss += loss_function(
+                                        model_outputs[k, :seq_length],
+                                        sequence_labels[k, :seq_length]
+                                    )
+                                    """loss += loss_function(
+                                        model_outputs[k, seq_length-1:seq_length],
+                                        sequence_labels[k, seq_length-1:seq_length]
+                                    )"""
                                     sequence_count += 1.0
                                 # end for
-                                """print(u"Batch {}, Sequence {}, loss {}".format(i, j, loss))
+                                # print(u"Batch {}, Sequence {}, loss {}".format(i, j, loss))
                                 # Backward and step
-                                if i < batch_tensor.size(1) - 1:
+                                """if i < batch_tensor.size(1) - 1:
                                     loss.backward(retain_graph=True)
                                 else:
                                     loss.backward()
-                                # end if
+                                # end if"""
+                                loss.backward()
 
                                 # Step
                                 optimizer.step()
-
+                                gc.collect()
                                 # Add
                                 training_loss += loss.item()
-                                training_total += sequence_tensor.size(0)"""
+                                training_total += sequence_tensor.size(0)
 
                                 # Remove sequence length
                                 batch_lengths -= args.max_length
                                 batch_lengths[batch_lengths.lt(0)] = 0
+                                del sequence_mask
+                                del sequence_tensor
+                                del sequence_labels
+                                del sequence_length
+                                del model_outputs
                             # end if
-                            # print(u"Batch {}, loss {} ({})".format(i, loss / sequence_count, sequence_count))
+                            print(u"Batch {}, loss {} ({})".format(i, training_loss / training_total, training_total))
                             # Backward and step
-                            loss.backward()
-                            optimizer.step()
+                            # loss.backward()
+                            # optimizer.step()
 
                             # Add
                             training_loss += loss.item()
