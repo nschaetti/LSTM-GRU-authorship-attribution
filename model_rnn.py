@@ -296,14 +296,14 @@ for space in param_space:
                                 for k in range(model_outputs.size(0)):
                                     # Seq. length
                                     seq_length = sequence_length[k]
-                                    loss += loss_function(
+                                    """loss += loss_function(
                                         model_outputs[k, :seq_length],
                                         sequence_labels[k, :seq_length]
-                                    )
-                                    """loss += loss_function(
+                                    )"""
+                                    loss += loss_function(
                                         model_outputs[k, seq_length-1:seq_length],
                                         sequence_labels[k, seq_length-1:seq_length]
-                                    )"""
+                                    )
                                     sequence_count += 1.0
                                 # end for
                                 # print(u"Batch {}, Sequence {}, loss {}".format(i, j, loss))
