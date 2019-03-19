@@ -1,0 +1,1 @@
+python model_rnn_keras.py --hidden-size 1000 --cell-size 1000 --embedding-size 300 --feature wv --learning-window 40 --max-length 40 --output outputs/ --name "LSTM 1000-1000 WV keras" --description ""
