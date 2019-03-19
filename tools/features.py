@@ -38,7 +38,7 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
 
 
 # Create transformer
-def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_lg"):
+def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_lg", token2index=None):
     """
     Create the transformer
     :param feature:
@@ -82,7 +82,7 @@ def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Token(model=lang),
-                torchlanguage.transforms.ToIndex(start_ix=1),
+                torchlanguage.transforms.ToIndex(start_ix=1, token_to_ix=token2index),
                 torchlanguage.transforms.Reshape((-1))
             ])
         # end if
@@ -100,7 +100,7 @@ def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character(),
-                torchlanguage.transforms.ToIndex(start_ix=1),
+                torchlanguage.transforms.ToIndex(start_ix=1, token_to_ix=token2index),
                 torchlanguage.transforms.Reshape((-1))
             ])
         # end if
@@ -118,7 +118,7 @@ def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character2Gram(overlapse=True),
-                torchlanguage.transforms.ToIndex(start_ix=1),
+                torchlanguage.transforms.ToIndex(start_ix=1, token_to_ix=token2index),
                 torchlanguage.transforms.Reshape((-1))
             ])
         # end if
@@ -136,7 +136,7 @@ def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Character3Gram(overlapse=True),
-                torchlanguage.transforms.ToIndex(start_ix=1),
+                torchlanguage.transforms.ToIndex(start_ix=1, token_to_ix=token2index),
                 torchlanguage.transforms.Reshape((-1))
             ])
         # end if
