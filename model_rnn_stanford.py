@@ -27,6 +27,7 @@ from tools import argument_parsing, dataset, functions, features, settings
 from tools import keras_func as keras_tools
 from models import KerasRNN
 from keras import optimizers
+from keras import callbacks
 import generators as G
 import math
 from tools import load_glove_embeddings as gle
@@ -43,8 +44,9 @@ args, use_cuda, param_space, xp = argument_parsing.parser_training()
 
 # Load from directory
 reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(
-    args.dataset_size,
-    n_authors=args.n_authors
+    dataset_size=args.dataset_size,
+    n_authors=args.n_authors,
+    k=10
 )
 
 # Print authors
@@ -95,6 +97,7 @@ for space in param_space:
             # Choose fold
             xp.set_fold_state(k)
             reuters_loader_train.dataset.set_fold(k)
+            reuters_loader_dev.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
             # Choose the right transformer
@@ -117,10 +120,12 @@ for space in param_space:
             )
 
             # Print model summary
-            print(model.summary(90))
+            if k == 0:
+                print(model.summary(90))
+            # end if
 
             # Adam
-            adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+            adam = optimizers.Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
 
             # Compile the model
             model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
@@ -152,23 +157,77 @@ for space in param_space:
                 pretrained=False
             )
 
-            # For each epoch
-            for epoch in range(args.epoch):
-                # Train
-                model.fit_generator(
-                    generator=training_generator.generate(),
-                    steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
-                    epochs=args.epoch,
-                    verbose=1,
-                    validation_data=validation_generator.generate(),
-                    validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
-                    use_multiprocessing=False,
-                    workers=0
-                )
+            # Test generator
+            test_generator = G.ReutersC50BatchGenerator(
+                data_inputs=test_inputs,
+                data_labels=test_labels,
+                batch_size=args.batch_size,
+                num_classes=args.n_authors,
+                many_to_many=False,
+                max_index=400001,
+                pretrained=False
+            )
+
+            # Model checkpoint
+            checkpoint = callbacks.ModelCheckpoint(
+                "saved_models/model_stanford_{}_keras-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, k),
+                verbose=1,
+                monitor='val_loss',
+                save_best_only=True,
+                mode='auto'
+            )
+
+            # Train
+            model.fit_generator(
+                generator=training_generator.generate_indexes(),
+                steps_per_epoch=math.ceil(90.0 * args.n_authors / args.batch_size),
+                epochs=args.epoch,
+                verbose=1,
+                validation_data=validation_generator.generate_indexes(),
+                validation_steps=math.ceil(5.0 * args.n_authors / args.batch_size),
+                use_multiprocessing=False,
+                workers=0,
+                callbacks=[checkpoint]
+            )
+
+            # Load best model
+            model.load_weights("saved_models/model_stanford_{}_keras-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, k),)
+
+            # Counters
+            count = 0.0
+            total = 0.0
+
+            # Test
+            for i, batch in enumerate(test_generator.generate_indexes()):
+                # Inputs and outputs
+                x_test, y_test = batch
+
+                # Predict
+                predictions = model.predict(x_test, batch_size=args.batch_size)
+
+                # Maximum probabilities
+                predicted = np.argmax(predictions, axis=1)
+
+                # Truth
+                truth = np.argmax(y_test, axis=1)
+
+                # Correctly predicted
+                count += np.sum(predicted == truth)
+
+                # Total
+                total += y_test.shape[0]
+
+                # End ?
+                if total >= 150:
+                    break
+                # end if
             # end for
 
+            # Accuracy
+            accuracy = count / total
+
             # Print success rate
-            xp.add_result(0.0)
+            xp.add_result(accuracy)
         # end for
     # end for
 

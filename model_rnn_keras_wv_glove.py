@@ -29,8 +29,10 @@ from tools import keras_func as keras_tools
 from models import KerasRNN
 import generators as G
 from keras import optimizers
+from keras import callbacks
 import keras
 import math
+import matplotlib.pyplot as plt
 
 ####################################################
 # Main
@@ -89,7 +91,7 @@ for space in param_space:
         oov = np.array([])
 
         # For each fold
-        for k in range(10):
+        for k in range(5):
             # Choose fold
             xp.set_fold_state(k)
             reuters_loader_train.dataset.set_fold(k)
@@ -113,7 +115,9 @@ for space in param_space:
             )
 
             # Print model summary
-            print(model.summary(90))
+            if k == 0:
+                print(model.summary(90))
+            # end if
 
             # Adam
             adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
@@ -150,23 +154,81 @@ for space in param_space:
                 pretrained=True
             )
 
-            # For each epoch
-            for epoch in range(args.epoch):
-                # Train
-                model.fit_generator(
-                    generator=training_generator.generate(),
-                    steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
-                    epochs=args.epoch,
-                    verbose=1,
-                    validation_data=validation_generator.generate(),
-                    validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
-                    use_multiprocessing=False,
-                    workers=0
-                )
+            # Test generator
+            test_generator = G.ReutersC50BatchGenerator(
+                data_inputs=test_inputs,
+                data_labels=test_time_labels,
+                # data_labels=dev_labels,
+                batch_size=args.batch_size,
+                num_classes=args.n_authors,
+                many_to_many=True,
+                max_index=1000000,
+                pretrained=True
+            )
+
+            # Model checkpoint
+            checkpoint = callbacks.ModelCheckpoint(
+                "saved_models/model-{}.h5".format(k),
+                verbose=1,
+                monitor='val_loss',
+                save_best_only=True,
+                mode='auto'
+            )
+
+            # Train and validation
+            model.fit_generator(
+                generator=training_generator.generate_embeddings(),
+                steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
+                epochs=args.epoch,
+                verbose=0,
+                validation_data=validation_generator.generate_embeddings(),
+                validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
+                use_multiprocessing=False,
+                workers=0,
+                callbacks=[checkpoint]
+            )
+
+            # Load best model
+            model.load_weights("saved_models/model-{}.h5".format(k))
+
+            # Counters
+            count = 0.0
+            total = 0.0
+
+            # Test
+            for i, batch in enumerate(test_generator.generate_embeddings()):
+                # Inputs and outputs
+                x_test, y_test = batch
+
+                # Predict
+                predictions = model.predict(x_test, batch_size=args.batch_size)
+
+                # Average author probabilities
+                predictions = np.average(predictions, axis=1)
+
+                # Maximum probabilities
+                predicted = np.argmax(predictions, axis=1)
+
+                # Ground truth
+                truth = np.argmax(np.average(y_test, axis=1), axis=1)
+
+                # Correctly predicted
+                count += np.sum(predicted == truth)
+
+                # Total
+                total += y_test.shape[0]
+
+                # End ?
+                if total >= 150:
+                    break
+                # end if
             # end for
 
+            # Accuracy
+            accuracy = count / total
+
             # Print success rate
-            xp.add_result(0.0)
+            xp.add_result(accuracy)
         # end for
     # end for
 
