@@ -54,6 +54,8 @@ def parser_training():
                       help="The text transformer to use (fw, pos, tag, wv, c1, c2, c3, cnn)", default='wv',
                       extended=True)
     args.add_argument(command="--pretrained", name="pretrained", action='store_true', help="Use pretrained layer or not", default=False, extended=False)
+    args.add_argument(command="--fine-tuning", name="fine_tuning", action='store_true',
+                      help="Fine tune the pretrained layer ?", default=False, extended=False)
     args.add_argument(command="--voc-size", name="voc_size", type=int, help="Voc. size",
                       default=30000, extended=False)
     args.add_argument(command="--n-layers", name="n_layers", type=int, help="Number of recurrent layers", extended=True,
