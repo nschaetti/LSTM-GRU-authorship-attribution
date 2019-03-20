@@ -32,6 +32,7 @@ class ReutersC50BatchGenerator(object):
         self.current_index = 0
         self.max_index = max_index
         self.pretrained = pretrained
+        self.sample_lengths = None
     # end __init__
 
     # Length
@@ -63,7 +64,7 @@ class ReutersC50BatchGenerator(object):
     # end __getitem__
 
     # Generate indexes
-    def _generate_indexes(self):
+    def generate_indexes(self):
         """
         Generate indexes
         :return:
@@ -75,12 +76,22 @@ class ReutersC50BatchGenerator(object):
             # Filter
             indexes = [x for x in indexes if x < self.data_size]
 
+            # Next index
+            self.current_index += 1
+            if self.current_index * self.batch_size >= self.data_size:
+                self.current_index = 0
+            # end if
+
             # Batch size
             batch_size = len(indexes)
+
+            # Sample lengths
+            self.sample_lengths = np.zeros(batch_size, dtype=int)
 
             # Max length
             max_length = 0
             for i, ix in enumerate(indexes):
+                self.sample_lengths[i] = len(self.data_inputs[ix])
                 if len(self.data_inputs[ix]) > max_length:
                     max_length = len(self.data_inputs[ix])
                 # end if
@@ -99,13 +110,13 @@ class ReutersC50BatchGenerator(object):
             # Generate each sample
             for i, ix in enumerate(indexes):
                 # To numpy and category
-                x_train = np.array(self.data_inputs[i])
+                x_train = np.array(self.data_inputs[ix])
 
                 # Zero for index above max_index
                 x_train[x_train >= self.max_index] = 0
 
                 # Labels
-                y_train = to_categorical(np.array(self.data_labels[i]), num_classes=self.num_classes)
+                y_train = to_categorical(np.array(self.data_labels[ix]), num_classes=self.num_classes)
 
                 # Sample length
                 sample_length = x_train.shape[0]
@@ -126,7 +137,7 @@ class ReutersC50BatchGenerator(object):
     # end _generate_indexes
 
     # Generate embeddings
-    def _generate_embeddings(self):
+    def generate_embeddings(self):
         """
         Generate embeddings
         :return:
@@ -138,15 +149,25 @@ class ReutersC50BatchGenerator(object):
             # Filter
             indexes = [x for x in indexes if x < self.data_size]
 
+            # Next index
+            self.current_index += 1
+            if self.current_index * self.batch_size >= self.data_size:
+                self.current_index = 0
+            # end if
+
             # Batch size
             batch_size = len(indexes)
 
             # Embedding size
             embedding_size = self.data_inputs[0].shape[1]
 
+            # Sample lengths
+            self.sample_lengths = np.zeros(batch_size, dtype=int)
+
             # Max length
             max_length = 0
             for i, ix in enumerate(indexes):
+                self.sample_lengths[i] = int(self.data_inputs[ix].shape[0])
                 if self.data_inputs[ix].shape[0] > max_length:
                     max_length = self.data_inputs[ix].shape[0]
                 # end if
@@ -165,13 +186,13 @@ class ReutersC50BatchGenerator(object):
             # Generate each sample
             for i, ix in enumerate(indexes):
                 # To numpy and category
-                x_train = self.data_inputs[i]
+                x_train = self.data_inputs[ix]
 
                 # Zero for index above max_index
                 x_train[x_train >= self.max_index] = 0
 
                 # Labels
-                y_train = to_categorical(self.data_labels[i], num_classes=self.num_classes)
+                y_train = to_categorical(self.data_labels[ix], num_classes=self.num_classes)
 
                 # Sample length
                 sample_length = x_train.shape[0]
@@ -190,19 +211,6 @@ class ReutersC50BatchGenerator(object):
             yield x, y
         # end while
     # end _generate_embeddings
-
-    # Generate
-    def generate(self):
-        """
-        Generate data
-        :return:
-        """
-        if self.pretrained:
-            self._generate_embeddings()
-        else:
-            self._generate_indexes()
-        # end if
-    # end generate
 
     # Generate
     def _data_generation(self, indexes):
