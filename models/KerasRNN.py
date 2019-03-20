@@ -43,9 +43,9 @@ def create_rnn_model_with_pretrained_embedding_layer(rnn_type, embedding_matrix,
 
     # Add first RNN
     if rnn_type == 'LSTM':
-        model.add(LSTM(hidden_size, return_sequences=True, input_shape=(None, embedding_size)))
+        model.add(LSTM(hidden_size, return_sequences=True, input_shape=(None, embedding_matrix.shape[1])))
     else:
-        model.add(GRU(hidden_size, return_sequences=True, input_shape=(None, embedding_size)))
+        model.add(GRU(hidden_size, return_sequences=True, input_shape=(None, embedding_matrix.shape[1])))
     # end if
 
     # Add other LSTM
