@@ -63,14 +63,6 @@ for space in param_space:
     hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout, output_dropout = functions.get_params(
         space)
 
-    # Choose the right transformer
-    reutersc50_dataset.transform = features.create_transformer(
-        feature,
-        args.pretrained,
-        args.embedding_path,
-        lang
-    )
-
     # Dataset start
     reutersc50_dataset.set_start(dataset_start)
 
@@ -104,18 +96,19 @@ for space in param_space:
                 # Load GloVe
                 word2index, embedding_matrix = gle.load_glove_embeddings(
                     fp=args.embedding_path,
-                    embedding_dim=embedding_size,
-                    voc_size=500000
+                    embedding_dim=embedding_size
                 )
+                pretrained_vocsize = embedding_matrix.shape[0]
             else:
                 word2index = None
                 embedding_matrix = None
+                pretrained_vocsize = 0
             # end if
 
             # Choose the right transformer
             reutersc50_dataset.transform = features.create_transformer(
                 feature,
-                args.pretrained,
+                True if args.pretrained and not args.fine_tuning else False,
                 args.embedding_path,
                 lang,
                 token2index=word2index
@@ -138,14 +131,18 @@ for space in param_space:
                     embedding_matrix=embedding_matrix,
                     hidden_size=hidden_size,
                     dense_size=args.n_authors,
+                    average=False,
+                    trainable=True
                 )
             else:
                 # Create model
                 model = KerasRNN.create_rnn_model_with_embedding_layer(
                     rnn_type=rnn_type,
                     voc_size=settings.voc_size[feature],
+                    embedding_size=embedding_size,
                     hidden_size=hidden_size,
                     dense_size=args.n_authors,
+                    average=False
                 )
             # end if
 
@@ -178,7 +175,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=1000000,
+                max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
             )
 
@@ -189,7 +186,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=1000000,
+                max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
             )
 
@@ -200,7 +197,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=1000000,
+                max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
             )
 
@@ -213,13 +210,24 @@ for space in param_space:
                 mode='auto'
             )
 
+            # Generators
+            if args.pretrained and not args.fine_tuning:
+                train_generate = training_generator.generate_embeddings()
+                validation_generate = validation_generator.generate_embeddings()
+                test_generate = test_generator.generate_embeddings()
+            else:
+                train_generate = training_generator.generate_indexes()
+                validation_generate = validation_generator.generate_indexes()
+                test_generate = test_generator.generate_indexes()
+            # end if
+
             # Train and validation
             model.fit_generator(
-                generator=training_generator.generate_embeddings(),
+                generator=train_generate,
                 steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
                 epochs=args.epoch,
-                verbose=0,
-                validation_data=validation_generator.generate_embeddings(),
+                verbose=1,
+                validation_data=validation_generate,
                 validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
                 use_multiprocessing=False,
                 workers=0,
@@ -234,7 +242,7 @@ for space in param_space:
             total = 0.0
 
             # Test
-            for i, batch in enumerate(test_generator.generate_embeddings()):
+            for i, batch in enumerate(test_generate):
                 # Inputs and outputs
                 x_test, y_test = batch
 
