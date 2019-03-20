@@ -93,12 +93,11 @@ for space in param_space:
 
             # Load GloVe if needed
             if args.pretrained and args.fine_tuning:
-                # Load GloVe
-                word2index, embedding_matrix = gle.load_glove_embeddings(
-                    fp=args.embedding_path,
-                    embedding_dim=embedding_size
+                word2index, embedding_matrix, pretrained_vocsize = features.load_pretrained_weights(
+                    feature=feature,
+                    emb_path=args.embedding_path,
+                    embedding_size=embedding_size
                 )
-                pretrained_vocsize = embedding_matrix.shape[0]
             else:
                 word2index = None
                 embedding_matrix = None
@@ -226,7 +225,7 @@ for space in param_space:
                 generator=train_generate,
                 steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
                 epochs=args.epoch,
-                verbose=1,
+                verbose=0,
                 validation_data=validation_generate,
                 validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
                 use_multiprocessing=False,
