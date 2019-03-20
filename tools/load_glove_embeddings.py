@@ -4,7 +4,7 @@ import numpy as np
 
 
 # Load GloVe embedding
-def load_glove_embeddings(fp, embedding_dim, voc_size, include_empty_char=True):
+def load_glove_embeddings(fp, embedding_dim, include_empty_char=True):
     """
     Loads pre-trained word embeddings (GloVe embeddings)
         Inputs: - fp: filepath of pre-trained glove embeddings
@@ -37,9 +37,6 @@ def load_glove_embeddings(fp, embedding_dim, voc_size, include_empty_char=True):
                 word2coefs[word] = coefs
                 if word not in word2index:
                     word2index[word] = len(word2index)
-                    if len(word2index) > voc_size:
-                        break
-                    # end if
                 # end if
             except Exception as e:
                 print('Exception occurred in `load_glove_embeddings`:', e)
