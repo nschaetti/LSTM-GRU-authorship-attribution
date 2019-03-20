@@ -113,7 +113,9 @@ class ReutersC50BatchGenerator(object):
                 x_train = np.array(self.data_inputs[ix])
 
                 # Zero for index above max_index
-                x_train[x_train >= self.max_index] = 0
+                if self.max_index != -1:
+                    x_train[x_train >= self.max_index] = 0
+                # end if
 
                 # Labels
                 y_train = to_categorical(np.array(self.data_labels[ix]), num_classes=self.num_classes)
@@ -189,7 +191,7 @@ class ReutersC50BatchGenerator(object):
                 x_train = self.data_inputs[ix]
 
                 # Zero for index above max_index
-                x_train[x_train >= self.max_index] = 0
+                # x_train[x_train >= self.max_index] = 0
 
                 # Labels
                 y_train = to_categorical(self.data_labels[ix], num_classes=self.num_classes)
