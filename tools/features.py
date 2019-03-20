@@ -65,7 +65,7 @@ def create_transformer(feature, pretrained=False, path="", lang="en_vectors_web_
         else:
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.FunctionWord(model=lang),
-                torchlanguage.transforms.ToIndex(start_ix=1),
+                torchlanguage.transforms.ToIndex(start_ix=1, token_to_ix=token2index),
                 torchlanguage.transforms.Reshape((-1))
             ])
         # end if
