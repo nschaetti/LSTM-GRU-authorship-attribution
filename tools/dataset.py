@@ -13,6 +13,41 @@ import settings
 #########################################
 
 
+# Load PAN17 dataset
+def load_pan17_dataset(k=10):
+    """
+    Load PAN 17 dataset
+    :param k:
+    :return:
+    """
+    # Load
+    pan17_dataset = torchlanguage.datasets.PAN17AuthorProfiling()
+
+    # Training
+    pan17_loader_train = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='train', k=k),
+        batch_size=1,
+        shuffle=False
+    )
+
+    # Validation
+    pan17_loader_dev = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='dev', k=k),
+        batch_size=1,
+        shuffle=False
+    )
+
+    # Test
+    pan17_loader_test = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='test', k=k),
+        batch_size=1,
+        shuffle=False
+    )
+
+    return pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test
+# end load_pan17_dataset
+
+
 # Load dataset
 def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level=False, n_authors=15, k=5):
     """
