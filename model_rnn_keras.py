@@ -42,9 +42,19 @@ import os
 args, use_cuda, param_space, xp = argument_parsing.parser_training()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(
-    args.dataset_size
-)
+if args.inverse_dev_test:
+    reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(
+        args.dataset_size,
+        k=args.k,
+        n_authors=args.n_authors
+    )
+else:
+    reutersc50_dataset, reuters_loader_train, reuters_loader_test, reuters_loader_dev = dataset.load_dataset(
+        args.dataset_size,
+        k=args.k,
+        n_authors=args.n_authors
+    )
+# end if
 
 # Disable CUDA
 if not args.cuda:
@@ -72,6 +82,19 @@ for space in param_space:
     # Average sample
     average_sample = np.array([])
 
+    # Load GloVe if needed
+    if args.pretrained and args.fine_tuning:
+        word2index, embedding_matrix, pretrained_vocsize = features.load_pretrained_weights(
+            feature=feature,
+            emb_path=args.embedding_path,
+            embedding_size=embedding_size
+        )
+    else:
+        word2index = None
+        embedding_matrix = None
+        pretrained_vocsize = 0
+    # end if
+
     # For each sample
     for n in range(args.n_samples):
         # Set sample
@@ -84,25 +107,12 @@ for space in param_space:
         oov = np.array([])
 
         # For each fold
-        for k in range(5):
+        for k in range(args.k):
             # Choose fold
             xp.set_fold_state(k)
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_dev.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
-
-            # Load GloVe if needed
-            if args.pretrained and args.fine_tuning:
-                word2index, embedding_matrix, pretrained_vocsize = features.load_pretrained_weights(
-                    feature=feature,
-                    emb_path=args.embedding_path,
-                    embedding_size=embedding_size
-                )
-            else:
-                word2index = None
-                embedding_matrix = None
-                pretrained_vocsize = 0
-            # end if
 
             # Choose the right transformer
             reutersc50_dataset.transform = features.create_transformer(
@@ -202,7 +212,7 @@ for space in param_space:
 
             # Model checkpoint
             checkpoint = callbacks.ModelCheckpoint(
-                "saved_models/model_{}_keras-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, k),
+                "saved_models/model_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k),
                 verbose=1,
                 monitor='val_loss',
                 save_best_only=True,
@@ -225,7 +235,7 @@ for space in param_space:
                 generator=train_generate,
                 steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
                 epochs=args.epoch,
-                verbose=0,
+                verbose=1,
                 validation_data=validation_generate,
                 validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
                 use_multiprocessing=False,
@@ -234,7 +244,7 @@ for space in param_space:
             )
 
             # Load best model
-            model.load_weights("saved_models/model_{}_keras-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, k))
+            model.load_weights("saved_models/model_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k))
 
             # Counters
             count = 0.0
