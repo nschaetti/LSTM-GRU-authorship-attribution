@@ -389,7 +389,7 @@ for space in param_space:
             # end for
 
             # Now we test on the test set
-            test_accuracy, test_loss, test_total = test_model(reuters_loader_dev)
+            test_accuracy, test_loss, test_total = test_model(reuters_loader_test)
 
             # Print success rate
             xp.add_result(test_loss / test_total)
