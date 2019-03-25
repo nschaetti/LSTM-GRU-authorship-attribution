@@ -233,11 +233,11 @@ for space in param_space:
             # Train and validation
             model.fit_generator(
                 generator=train_generate,
-                steps_per_epoch=math.ceil(80.0 * args.n_authors / args.batch_size),
+                steps_per_epoch=math.ceil(90.0 * args.n_authors / args.batch_size),
                 epochs=args.epoch,
                 verbose=1,
                 validation_data=validation_generate,
-                validation_steps=math.ceil(10.0 * args.n_authors / args.batch_size),
+                validation_steps=math.ceil(5.0 * args.n_authors / args.batch_size),
                 use_multiprocessing=False,
                 workers=0,
                 callbacks=[checkpoint]
@@ -274,7 +274,7 @@ for space in param_space:
                 total += y_test.shape[0]
 
                 # End ?
-                if total >= 150:
+                if total >= 75:
                     break
                 # end if
             # end for
@@ -284,6 +284,15 @@ for space in param_space:
 
             # Print success rate
             xp.add_result(accuracy)
+
+            # Delete
+            del model
+            del training_generator
+            del validation_generator
+            del test_generator
+            del train_inputs
+            del train_labels
+            del train_time_labels
         # end for
     # end for
 
