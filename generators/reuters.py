@@ -64,7 +64,7 @@ class ReutersC50BatchGenerator(object):
     # end __getitem__
 
     # Generate indexes
-    def generate_indexes(self):
+    def generate_indexes(self, return_lengths=False):
         """
         Generate indexes
         :return:
@@ -96,6 +96,7 @@ class ReutersC50BatchGenerator(object):
                     max_length = len(self.data_inputs[ix])
                 # end if
             # end for
+            xl = self.sample_lengths
 
             # Initialization X
             x = np.zeros((batch_size, max_length))
@@ -134,12 +135,16 @@ class ReutersC50BatchGenerator(object):
                 # end if
             # end for
 
-            yield x, y
+            if return_lengths:
+                yield x, y, xl
+            else:
+                yield x, y
+            # end if
         # end while
     # end _generate_indexes
 
     # Generate embeddings
-    def generate_embeddings(self):
+    def generate_embeddings(self, return_lengths=False):
         """
         Generate embeddings
         :return:
@@ -174,6 +179,7 @@ class ReutersC50BatchGenerator(object):
                     max_length = self.data_inputs[ix].shape[0]
                 # end if
             # end for
+            xl = self.sample_lengths
 
             # Initialization X
             x = np.zeros((batch_size, max_length, embedding_size))
@@ -210,7 +216,11 @@ class ReutersC50BatchGenerator(object):
                 # end if
             # end for
 
-            yield x, y
+            if return_lengths:
+                yield x, y, xl
+            else:
+                yield x, y
+            # end if
         # end while
     # end _generate_embeddings
 

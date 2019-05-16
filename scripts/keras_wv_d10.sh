@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# python2.7 model_rnn_keras.py --hidden-size 100 --cell-size 100 --embedding-size 300 --feature wv --dataset-size 10 --dataset-start 0,10,20,30,40,50 --learning-window 40 --max-length 40 --k 10 --output outputs/ --name "AA Na15 D10 LSTM 100-100 WV-P keras" --description "Authorship Attribution 15 authors 10 documents LSTM 100 hidden neurons, Word Vectors (WV) pretrained with Glove" --rnn-type LSTM --epoch 250 --batch-size 64 --pretrained --verbose 4
+
+# python2.7 model_rnn_keras.py --hidden-size 200 --cell-size 200 --embedding-size 300 --feature wv --dataset-size 10 --dataset-start 0,10,20,30,40,50 --learning-window 40 --max-length 40 --k 10 --output outputs/ --name "AA Na15 D10 LSTM 200-200 WV-P keras" --description "Authorship Attribution 15 authors 10 documents LSTM 300 hidden neurons, Word Vectors (WV) pretrained with Glove" --rnn-type LSTM --epoch 250 --batch-size 64 --pretrained --verbose 4
+
+# python2.7 model_rnn_keras.py --hidden-size 300 --cell-size 300 --embedding-size 300 --feature wv --dataset-size 10 --dataset-start 0 --learning-window 40 --max-length 40 --k 10 --output outputs/ --name "AA Na15 D10 LSTM 300-300 WV-P keras" --description "Authorship Attribution 15 authors 10 documents LSTM 1000 hidden neurons, Word Vectors (WV) pretrained with Glove" --rnn-type LSTM --epoch 100 --batch-size 64 --pretrained --verbose 4
+
+python2.7 model_rnn_keras.py --hidden-size 300 --cell-size 300 --embedding-size 300 --feature wv --dataset-size 10 --dataset-start 10 --learning-window 40 --max-length 40 --k 10 --output outputs/ --name "AA Na15 D10 S10 LSTM 300-300 WV-P keras" --description "Authorship Attribution 15 authors 10 documents start 10 LSTM 1000 hidden neurons, Word Vectors (WV) pretrained with Glove" --rnn-type LSTM --epoch 100 --batch-size 64 --pretrained --verbose 4

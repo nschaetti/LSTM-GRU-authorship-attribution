@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 args, use_cuda, param_space, xp = argument_parsing.parser_training()
 
 # Load from directory
-if args.inverse_dev_test:
+if not args.inverse_dev_test:
     reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(
         args.dataset_size,
         k=args.k,
@@ -248,6 +248,7 @@ for space in param_space:
             model.load_weights("saved_models/model_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k))
 
             # Counters
+            document_total = 0.0
             count = 0.0
             total = 0.0
 
@@ -261,30 +262,39 @@ for space in param_space:
 
                 # For each test sample
                 for j in range(x_test.shape[0]):
+                    # Ground truth
+                    truth = np.argmax(np.average(y_test[j], axis=0), axis=0)
+
                     # Sample length
                     sample_length = x_lengths[j]
 
                     # Prediction
                     prediction = predictions[j]
 
-                    # Average author probabilities
-                    sample_prediction = np.average(prediction[:sample_length], axis=0)
+                    # For each sentence
+                    for s in range(0, sample_length, 15):
+                        # Sentence prediction
+                        sentence_prediction = prediction[s:s+15]
 
-                    # Maximum probabilities
-                    predicted = np.argmax(sample_prediction, axis=0)
+                        # Average author probabilities
+                        sample_prediction = np.average(sentence_prediction, axis=0)
 
-                    # Ground truth
-                    truth = np.argmax(np.average(y_test[j], axis=0), axis=0)
+                        # Maximum probabilities
+                        predicted = np.argmax(sample_prediction, axis=0)
 
-                    # Correctly predicted
-                    count += np.sum(predicted == truth)
+                        # Correctly predicted
+                        count += np.sum(predicted == truth)
+
+                        # Total
+                        total += 1.0
+                    # end for
 
                     # Total
-                    total += 1
+                    document_total += 1
                 # end for
 
                 # End ?
-                if total >= 22:
+                if document_total >= 22:
                     break
                 # end if
             # end for
