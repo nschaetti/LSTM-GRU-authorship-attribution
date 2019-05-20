@@ -48,14 +48,14 @@ if args.inverse_dev_test:
         args.dataset_size,
         k=args.k,
         n_authors=args.n_authors,
-        features=u"pca100"
+        features=args.precomputed_features
     )
 else:
     reutersc50_dataset, reuters_loader_train, reuters_loader_test, reuters_loader_dev = dataset.load_dataset(
         args.dataset_size,
         k=args.k,
         n_authors=args.n_authors,
-        features=u"pca100"
+        features=args.precomputed_features
     )
 # end if
 
