@@ -62,12 +62,14 @@ for k in range(args.k):
     fold_dir = os.path.join(args.datadir, u"k{}".format(k))
     fold_train_dir = os.path.join(fold_dir, u"train")
     fold_test_dir = os.path.join(fold_dir, u"test")
+    fold_val_dir = os.path.join(fold_dir, u"val")
 
     # Create directories
     try:
         os.mkdir(fold_dir)
         os.mkdir(fold_train_dir)
         os.mkdir(fold_test_dir)
+        os.mkdir(fold_val_dir)
     except OSError:
         pass
     # end try
@@ -77,11 +79,13 @@ for k in range(args.k):
         # Author path
         author_train_dir = os.path.join(fold_train_dir, u"class{}".format(a))
         author_test_dir = os.path.join(fold_test_dir, u"class{}".format(a))
+        author_val_dir = os.path.join(fold_val_dir, u"class{}".format(a))
 
         # Create
         try:
             os.mkdir(author_train_dir)
             os.mkdir(author_test_dir)
+            os.mkdir(author_val_dir)
         except OSError:
             pass
         # end try
@@ -147,7 +151,7 @@ for k in range(args.k):
     file_index = {}
 
     # Get test data for this fold
-    for i, data in enumerate(reuters_loader_test):
+    for i, data in enumerate(reuters_loader_dev):
         print(i)
         # Inputs and labels
         inputs, labels, time_labels = data
@@ -183,7 +187,10 @@ for k in range(args.k):
         file_index[int(labels)] += 1
     # end for
 
-    # Get test data for this fold
+    # File indexes
+    file_index = {}
+
+    # Get val data for this fold
     for i, data in enumerate(reuters_loader_test):
         print(i)
         # Inputs and labels
@@ -193,7 +200,12 @@ for k in range(args.k):
         data_length = len(inputs)
 
         # Author directory
-        author_test_dir = os.path.join(fold_test_dir, u"class{}".format(int(labels[0])))
+        author_val_dir = os.path.join(fold_val_dir, u"class{}".format(int(labels[0])))
+
+        # File index
+        if int(labels[0]) not in file_index.keys():
+            file_index[int(labels)] = 0
+        # end if
 
         # Segment
         segment = inputs
@@ -205,8 +217,8 @@ for k in range(args.k):
         # end for
 
         # Write to file
-        file_desc = codecs.open(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])), "w", encoding="utf-8")
-        print(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])))
+        file_desc = codecs.open(os.path.join(author_val_dir, u"file{}".format(file_index[int(labels)])), "w", encoding="utf-8")
+        print(os.path.join(author_val_dir, u"file{}".format(file_index[int(labels)])))
         file_desc.write(file_text.replace(u"$ ", u"$"))
         file_desc.close()
 
