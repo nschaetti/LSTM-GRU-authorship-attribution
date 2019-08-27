@@ -49,7 +49,7 @@ args = parser.parse_args()
 
 # Load from directory
 reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_test = dataset.load_dataset(
-    k=args.datadir,
+    k=args.k,
     n_authors=15
 )
 
@@ -57,16 +57,20 @@ reutersc50_dataset, reuters_loader_train, reuters_loader_dev, reuters_loader_tes
 reutersc50_dataset.transform = torchlanguage.transforms.Token()
 
 # For each fold
-for k in range(args.datadir):
+for k in range(args.k):
     # Fold paths
     fold_dir = os.path.join(args.datadir, u"k{}".format(k))
     fold_train_dir = os.path.join(fold_dir, u"train")
     fold_test_dir = os.path.join(fold_dir, u"test")
 
     # Create directories
-    os.mkdir(fold_dir)
-    os.mkdir(fold_train_dir)
-    os.mkdir(fold_test_dir)
+    try:
+        os.mkdir(fold_dir)
+        os.mkdir(fold_train_dir)
+        os.mkdir(fold_test_dir)
+    except OSError:
+        pass
+    # end try
 
     # Create authors directories
     for a in range(15):
@@ -75,8 +79,12 @@ for k in range(args.datadir):
         author_test_dir = os.path.join(fold_test_dir, u"class{}".format(a))
 
         # Create
-        os.mkdir(author_train_dir)
-        os.mkdir(author_test_dir)
+        try:
+            os.mkdir(author_train_dir)
+            os.mkdir(author_test_dir)
+        except OSError:
+            pass
+        # end try
     # end for
 
     # Choose fold
@@ -84,8 +92,12 @@ for k in range(args.datadir):
     reuters_loader_dev.dataset.set_fold(k)
     reuters_loader_test.dataset.set_fold(k)
 
+    # File indexes
+    file_index = {}
+
     # Get training data for this fold
     for i, data in enumerate(reuters_loader_train):
+        print(i)
         # Inputs and labels
         inputs, labels, time_labels = data
 
@@ -95,17 +107,28 @@ for k in range(args.datadir):
         # Author directory
         author_train_dir = os.path.join(fold_train_dir, u"class{}".format(int(labels[0])))
 
+        # File index
+        if int(labels[0]) not in file_index.keys():
+            file_index[int(labels)] = 0
+        # end if
+
         # For each segment
         cont = True
         s = 0
-        file_index = 0
         while cont:
             # Segment
             segment = inputs[s:s+512]
 
+            # TO unicode
+            file_text = u""
+            for p in range(len(segment)):
+                file_text += unicode(segment[p][0]) + u" "
+            # end for
+
             # Write to file
-            file_desc = codecs.open(os.path.join(author_train_dir, u"file{}".format(file_index)), "w", encoding="utf-8")
-            file_desc.write(u" ".join(segment).replace(u"$ ", u"$"))
+            file_desc = codecs.open(os.path.join(author_train_dir, u"file{}".format(file_index[int(labels)])), "w", encoding="utf-8")
+            print(os.path.join(author_train_dir, u"file{}".format(file_index[int(labels)])))
+            file_desc.write(file_text.replace(u"$ ", u"$"))
             file_desc.close()
 
             # End ?
@@ -116,12 +139,16 @@ for k in range(args.datadir):
             # end if
 
             # Inc
-            file_index += 1
+            file_index[int(labels)] += 1
         # end while
     # end for
 
+    # File indexes
+    file_index = {}
+
     # Get test data for this fold
     for i, data in enumerate(reuters_loader_test):
+        print(i)
         # Inputs and labels
         inputs, labels, time_labels = data
 
@@ -131,28 +158,59 @@ for k in range(args.datadir):
         # Author directory
         author_test_dir = os.path.join(fold_test_dir, u"class{}".format(int(labels[0])))
 
-        # For each segment
-        cont = True
-        s = 0
-        file_index = 0
-        while cont:
-            # Segment
-            segment = inputs[s:s + 512]
+        # File index
+        if int(labels[0]) not in file_index.keys():
+            file_index[int(labels)] = 0
+        # end if
 
-            # Write to file
-            file_desc = codecs.open(os.path.join(author_test_dir, u"file{}".format(file_index)), "w", encoding="utf-8")
-            file_desc.write(u" ".join(segment).replace(u"$ ", u"$"))
-            file_desc.close()
+        # Segment
+        segment = inputs
 
-            # End ?
-            if s + 512 > data_length:
-                cont = False
-            else:
-                s += 512
-            # end if
+        # TO unicode
+        file_text = u""
+        for p in range(len(segment)):
+            file_text += unicode(segment[p][0]) + u" "
+        # end for
 
-            # Inc
-            file_index += 1
-        # end while
+        # Write to file
+        file_desc = codecs.open(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])), "w",
+                                encoding="utf-8")
+        print(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])))
+        file_desc.write(file_text.replace(u"$ ", u"$"))
+        file_desc.close()
+
+        # Inc
+        file_index[int(labels)] += 1
+    # end for
+
+    # Get test data for this fold
+    for i, data in enumerate(reuters_loader_test):
+        print(i)
+        # Inputs and labels
+        inputs, labels, time_labels = data
+
+        # Data length
+        data_length = len(inputs)
+
+        # Author directory
+        author_test_dir = os.path.join(fold_test_dir, u"class{}".format(int(labels[0])))
+
+        # Segment
+        segment = inputs
+
+        # TO unicode
+        file_text = u""
+        for p in range(len(segment)):
+            file_text += unicode(segment[p][0]) + u" "
+        # end for
+
+        # Write to file
+        file_desc = codecs.open(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])), "w", encoding="utf-8")
+        print(os.path.join(author_test_dir, u"file{}".format(file_index[int(labels)])))
+        file_desc.write(file_text.replace(u"$ ", u"$"))
+        file_desc.close()
+
+        # Inc
+        file_index[int(labels)] += 1
     # end for
 # end for
