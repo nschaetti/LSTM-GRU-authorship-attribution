@@ -40,7 +40,7 @@ for k in range(args.k):
     )
 
     # Get good learning rate
-    learner.lr_find()
+    # learner.lr_find()
 
     # Train the model
     # learner.fit(0.001, 3, cycle_len=1, cycle_mult=2, early_stopping=5)
@@ -64,7 +64,7 @@ for k in range(args.k):
         # For each file
         for author_file in os.listdir(author_val_dir):
             # Read file
-            data.append(codecs.open(author_file, "r", encoding="utf-8").read())
+            data.append(codecs.open(os.path.join(author_val_dir, author_file), "r", encoding="utf-8").read())
         # end for
 
         # Predict class
@@ -72,6 +72,7 @@ for k in range(args.k):
 
         # For each prediction
         for p in pred:
+            print("pred : {}, author : {}".format(p, str(a)))
             if p == str(a):
                 count += 1
             # end if
