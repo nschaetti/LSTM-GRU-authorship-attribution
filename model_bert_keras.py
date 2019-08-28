@@ -17,6 +17,9 @@ parser.add_argument("--datadir")
 parser.add_argument("--k", default=10)
 args = parser.parse_args()
 
+# Average accuracy
+average_accuracy = np.zeros(args.k)
+
 # For each fold
 for k in range(args.k):
     # Validation directory
@@ -43,8 +46,8 @@ for k in range(args.k):
     # learner.lr_find()
 
     # Train the model
-    # learner.fit(0.001, 3, cycle_len=1, cycle_mult=2, early_stopping=5)
-    learner.fit_onecycle(2e-5, 1)
+    learner.fit(0.001, 3, cycle_len=1, cycle_mult=2, early_stopping=5)
+    # learner.fit_onecycle(2e-5, 1)
 
     # Get the predictor
     predictor = ktrain.get_predictor(learner.model, preproc)
@@ -72,8 +75,7 @@ for k in range(args.k):
 
         # For each prediction
         for p in pred:
-            print("pred : {}, author : {}".format(p, str(a)))
-            if p == str(a):
+            if p == "class{}".format(a):
                 count += 1
             # end if
         # end for
@@ -87,4 +89,8 @@ for k in range(args.k):
 
     # Print success rate
     print("ACCURACY TEST : {}".format(accuracy))
+    average_accuracy[k] = accuracy
 # end for
+
+# Print average
+print("Average accuracy : {}".format(np.mean(average_accuracy)))
