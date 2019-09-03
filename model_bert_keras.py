@@ -43,10 +43,13 @@ for k in range(args.k):
     )
 
     # Get good learning rate
-    # learner.lr_find()
+    learner.lr_find()
+
+    # Plot
+    learner.lr_plot()
 
     # Train the model
-    learner.fit(0.001, 3, cycle_len=1, cycle_mult=2, early_stopping=5)
+    learner.fit(2e-5, 20, early_stopping=5)
     # learner.fit_onecycle(2e-5, 1)
 
     # Get the predictor
