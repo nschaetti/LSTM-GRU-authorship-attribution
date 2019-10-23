@@ -49,7 +49,7 @@ def load_pan17_dataset(k=10):
 
 
 # Load dataset
-def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level=False, n_authors=15, k=5):
+def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level=False, n_authors=15, k=5, features=u""):
     """
     Load dataset
     :return:
@@ -67,7 +67,8 @@ def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level
             n_authors=n_authors,
             download=True,
             dataset_size=dataset_size,
-            dataset_start=dataset_start
+            dataset_start=dataset_start,
+            load_features=features
         )
     # end if
 
