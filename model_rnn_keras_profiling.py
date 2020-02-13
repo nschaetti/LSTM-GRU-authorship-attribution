@@ -174,33 +174,30 @@ for space in param_space:
             # end if
 
             # Training generator
-            training_generator = G.ReutersC50BatchGenerator(
+            training_generator = G.PAN17BatchGenerator(
                 data_inputs=train_inputs,
                 data_labels=train_time_labels,
                 batch_size=args.batch_size,
-                num_classes=args.n_authors,
                 many_to_many=True,
                 max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
             )
 
             # Validation generator
-            validation_generator = G.ReutersC50BatchGenerator(
+            validation_generator = G.PAN17BatchGenerator(
                 data_inputs=dev_inputs,
                 data_labels=dev_time_labels,
                 batch_size=args.batch_size,
-                num_classes=args.n_authors,
                 many_to_many=True,
                 max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
             )
 
             # Test generator
-            test_generator = G.ReutersC50BatchGenerator(
+            test_generator = G.PAN17BatchGenerator(
                 data_inputs=test_inputs,
                 data_labels=test_time_labels,
                 batch_size=args.batch_size,
-                num_classes=args.n_authors,
                 many_to_many=True,
                 max_index=pretrained_vocsize if args.fine_tuning else -1,
                 pretrained=True
@@ -208,7 +205,7 @@ for space in param_space:
 
             # Model checkpoint
             checkpoint = callbacks.ModelCheckpoint(
-                "saved_models/model_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k),
+                "saved_models/model_profiling_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k),
                 verbose=1,
                 monitor='val_loss',
                 save_best_only=True,
@@ -240,7 +237,7 @@ for space in param_space:
             )
 
             # Load best model
-            model.load_weights("saved_models/model_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k))
+            model.load_weights("saved_models/model_profiling_{}_keras-{}-{}-{}-{}-{}-{}.h5".format(rnn_type, feature, hidden_size, embedding_size, num_layers, args.n_authors, k))
 
             # Counters
             count = 0.0
