@@ -35,6 +35,22 @@ class ReutersC50BatchGenerator(object):
         self.sample_lengths = None
     # end __init__
 
+    # String
+    def __str__(self):
+        """
+        String
+        """
+        str_object = "Data size: {}\n".format(self.data_size)
+        str_object += "Batch size: {}\n".format(self.data_size)
+        str_object += "Num classes: {}\n".format(self.data_size)
+        str_object += "Many to many: {}\n".format(self.data_size)
+        str_object += "Current index: {}\n".format(self.current_index)
+        str_object += "Max index: {}\n".format(self.max_index)
+        str_object += "Pretrained: {}\n".format(self.pretrained)
+        str_object += "Sample lengths: {}".format(self.sample_lengths)
+        return str_object
+    # end __str__
+
     # Length
     def __len__(self):
         """

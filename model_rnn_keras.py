@@ -33,10 +33,16 @@ import math
 from tools import load_glove_embeddings as gle
 import os
 import matplotlib.pyplot as plt
+import tensorflow as tf
+import torch
 
 ####################################################
 # Main
 ####################################################
+
+np.random.seed(1)
+tf.set_random_seed(1)
+torch.manual_seed(1)
 
 
 # Parse args
@@ -177,7 +183,9 @@ for space in param_space:
                 dev_inputs, dev_labels, dev_time_labels = keras_tools.dataset_to_list(reuters_loader_dev, settings.voc_size[feature])
                 test_inputs, test_labels, test_time_labels = keras_tools.dataset_to_list(reuters_loader_test, settings.voc_size[feature])
             # end if
-
+            # print("train_inputs")
+            # print(train_inputs)
+            # exit()
             # Training generator
             training_generator = G.ReutersC50BatchGenerator(
                 data_inputs=train_inputs,
@@ -185,7 +193,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=pretrained_vocsize if args.fine_tuning else -1,
+                max_index=pretrained_vocsize if args.fine_tuning else settings.voc_size[feature],
                 pretrained=True
             )
 
@@ -196,7 +204,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=pretrained_vocsize if args.fine_tuning else -1,
+                max_index=pretrained_vocsize if args.fine_tuning else settings.voc_size[feature],
                 pretrained=True
             )
 
@@ -207,7 +215,7 @@ for space in param_space:
                 batch_size=args.batch_size,
                 num_classes=args.n_authors,
                 many_to_many=True,
-                max_index=pretrained_vocsize if args.fine_tuning else -1,
+                max_index=pretrained_vocsize if args.fine_tuning else settings.voc_size[feature],
                 pretrained=True
             )
 

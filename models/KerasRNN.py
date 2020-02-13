@@ -99,6 +99,8 @@ def create_rnn_model_with_embedding_layer(rnn_type, voc_size, embedding_size, hi
     model = Sequential()
 
     # Embedding
+    print("voc size")
+    print(voc_size)
     model.add(Embedding(voc_size, embedding_size, mask_zero=True))
 
     # Add first RNN
