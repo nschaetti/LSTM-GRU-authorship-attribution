@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# File : model_rnn_keras.py
-# Description : Test RNN models with Keras.
+# File : model_rnn_keras_profiling.py
+# Description : Test RNN models with Keras on PAN17 profiling tasks.
 # Auteur : Nils Schaetti <nils.schaetti@unine.ch>
 # Date : 01.02.2017 17:59:05
 # Lieu : Nyon, Suisse
@@ -47,10 +47,8 @@ if args.inverse_dev_test:
         k=args.k
     )
 else:
-    pan17_dataset, pan17_loader_train, pan17_loader_test, pan17_loader_dev = dataset.load_dataset(
-        args.dataset_size,
-        k=args.k,
-        n_authors=args.n_authors
+    pan17_dataset, pan17_loader_train, pan17_loader_test, pan17_loader_dev = dataset.load_pan17_dataset(
+        k=args.k
     )
 # end if
 
@@ -69,8 +67,8 @@ last_space = dict()
 # Iterate
 for space in param_space:
     # Params
-    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, num_layers, dropout, output_dropout = functions.get_params(
-        space)
+    hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, \
+    num_layers, dropout, output_dropout = functions.get_params(space)
 
     # Set experience state
     xp.set_state(space)
@@ -164,13 +162,22 @@ for space in param_space:
 
             # Get train, dev and test as lists
             if args.pretrained and not args.fine_tuning:
-                train_inputs, train_labels, train_time_labels = keras_tools.dataset_to_numpy(reuters_loader_train)
-                dev_inputs, dev_labels, dev_time_labels = keras_tools.dataset_to_numpy(reuters_loader_dev)
-                test_inputs, test_labels, test_time_labels = keras_tools.dataset_to_numpy(reuters_loader_test)
+                train_inputs, train_labels, train_time_labels = keras_tools.dataset_to_numpy(pan17_loader_train)
+                dev_inputs, dev_labels, dev_time_labels = keras_tools.dataset_to_numpy(pan17_loader_dev)
+                test_inputs, test_labels, test_time_labels = keras_tools.dataset_to_numpy(pan17_loader_test)
             else:
-                train_inputs, train_labels, train_time_labels = keras_tools.dataset_to_list(reuters_loader_train, settings.voc_size[feature])
-                dev_inputs, dev_labels, dev_time_labels = keras_tools.dataset_to_list(reuters_loader_dev, settings.voc_size[feature])
-                test_inputs, test_labels, test_time_labels = keras_tools.dataset_to_list(reuters_loader_test, settings.voc_size[feature])
+                train_inputs, train_labels, train_time_labels = keras_tools.dataset_to_list(
+                    pan17_loader_train,
+                    settings.voc_size[feature]
+                )
+                dev_inputs, dev_labels, dev_time_labels = keras_tools.dataset_to_list(
+                    pan17_loader_dev,
+                    settings.voc_size[feature]
+                )
+                test_inputs, test_labels, test_time_labels = keras_tools.dataset_to_list(
+                    pan17_loader_test,
+                    settings.voc_size[feature]
+                )
             # end if
 
             # Training generator
@@ -222,7 +229,8 @@ for space in param_space:
                 validation_generate = validation_generator.generate_indexes()
                 test_generate = test_generator.generate_indexes()
             # end if
-
+            print(dataset_size)
+            exit()
             # Train and validation
             model.fit_generator(
                 generator=train_generate,

@@ -8,7 +8,7 @@ import sys
 import torchlanguage.transforms
 import os
 import torch
-import settings
+from . import settings
 from tools import load_glove_embeddings as gle
 import numpy as np
 

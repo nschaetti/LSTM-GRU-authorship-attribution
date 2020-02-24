@@ -5,43 +5,45 @@
 # Imports
 import torchlanguage.transforms
 import torch
-import settings
-
-
-#########################################
-# Dataset
-#########################################
+from . import settings
 
 
 # Load PAN17 dataset
-def load_pan17_dataset(k=10):
+def load_pan17_dataset(output_length, output_dim, batch_size, k=10):
     """
     Load PAN 17 dataset
     :param k:
     :return:
     """
     # Load
-    pan17_dataset = torchlanguage.datasets.PAN17AuthorProfiling()
+    pan17_dataset = torchlanguage.datasets.PAN17AuthorProfiling(
+        lang='en',
+        download=True,
+        root='pan17',
+        output_type='long',
+        outputs_length=output_length,
+        output_dim=output_dim
+    )
 
     # Training
     pan17_loader_train = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='train', k=k),
-        batch_size=1,
-        shuffle=False
+        batch_size=batch_size,
+        shuffle=True
     )
 
     # Validation
     pan17_loader_dev = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='dev', k=k),
-        batch_size=1,
-        shuffle=False
+        batch_size=batch_size,
+        shuffle=True
     )
 
     # Test
     pan17_loader_test = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='test', k=k),
-        batch_size=1,
-        shuffle=False
+        batch_size=batch_size,
+        shuffle=True
     )
 
     return pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test

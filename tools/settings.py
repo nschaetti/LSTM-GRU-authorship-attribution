@@ -53,3 +53,9 @@ input_dims['c3'] = 60
 
 # Character Encoder
 ce_text_length = 15
+
+# Output length
+c1_output_length = 163
+
+# Output dim
+c1_output_dim = 10
