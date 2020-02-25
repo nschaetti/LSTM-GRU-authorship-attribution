@@ -55,7 +55,8 @@ input_dims['c3'] = 60
 ce_text_length = 15
 
 # Output length
-c1_output_length = 163
-
-# Output dim
-c1_output_dim = 10
+output_length = dict()
+output_length['wv'] = 110
+output_length['c1'] = 163
+output_length['c2'] = 80
+output_length['c3'] = 50

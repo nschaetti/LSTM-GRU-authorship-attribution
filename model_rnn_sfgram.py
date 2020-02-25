@@ -48,18 +48,19 @@ for space in param_space:
     hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, \
     num_layers, dropout, output_dropout = functions.get_params(space)
 
-    # Load PAN17 dataset
-    pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test = dataset.load_pan17_dataset(
-        output_length=settings.output_length[feature],
-        output_dim=settings.input_dims[feature],
-        batch_size=args.batch_size
+    # Load SFGram dataset
+    sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_dataset(
+        block_length=40,
+        batch_size=args.batch_size,
+        author='ASIMOV'
     )
 
-    # Print authors
-    xp.write("Number of users : {}".format(len(pan17_dataset.user_tweets)), log_level=0)
+    # Print dataset information
+    xp.write("Dataset length : {}".format(len(sfgram_dataset)), log_level=0)
+    xp.write("Number of texts : {}".format(len(sfgram_dataset.texts)), log_level=0)
 
     # Choose the right transformer
-    pan17_dataset.transform = features.create_transformer(
+    sfgram_dataset.transform = features.create_transformer(
         feature,
         args.pretrained,
         args.embedding_path,
@@ -78,14 +79,14 @@ for space in param_space:
         average_k_fold = np.array([])
 
         # For each fold
-        for k in range(10):
+        for k in range(5):
             # Change fold state
             xp.set_fold_state(k)
-            pan17_loader_train.dataset.set_fold(k)
-            pan17_loader_test.dataset.set_fold(k)
+            sfgram_loader_train.dataset.set_fold(k)
+            sfgram_loader_test.dataset.set_fold(k)
 
             # Choose the right transformer
-            pan17_dataset.transform = features.create_transformer(
+            sfgram_dataset.transform = features.create_transformer(
                 feature,
                 args.pretrained,
                 args.embedding_path,
@@ -131,112 +132,24 @@ for space in param_space:
                 validation_acc = 0.0
 
                 # Number of samples
-                n_samples = len(pan17_loader_train)
+                n_samples = len(sfgram_loader_train)
 
                 # RNN in training mode
                 rnn.train()
 
-                # Compute longest tweet
-                longest_tweet = 0
-
                 # Go through the training set
-                for i, data in enumerate(pan17_loader_train):
+                for i, data in enumerate(sfgram_loader_train):
                     # Data
                     inputs, gender, country, [gender_vector, country_vector] = data
-
-                    # Update tweet length
-                    if pan17_dataset.long_tweet > longest_tweet:
-                        longest_tweet = pan17_dataset.long_tweet
-                    # end if
-
-                    # Lengths
-                    batch_size = inputs.size(0)
-                    n_tweets = inputs.size(1)
-                    tweets_size = inputs.size(2)
-
-                    # Index targets
-                    indices_outputs = torch.LongTensor(batch_size)
-                    for batch_i in range(batch_size):
-                        indices_outputs[batch_i] = pan17_dataset.gender2num[gender[batch_i]]
-                    # end for
-
-                    # Transform to variable
-                    # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
-                    inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
-
-                    # To GPU
-                    if use_cuda:
-                        inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
-                    # end if
-
-                    # Zero grad
-                    rnn.zero_grad()
-
-                    # Forward
-                    model_outputs = rnn(inputs, reset_hidden=True)
-                    # print(model_outputs)
-                    # print(indices_outputs)
-
-                    # Class with highest probability
-                    _, predicted_class = torch.max(model_outputs, dim=1)
-
-                    # Compute loss
-                    loss = loss_function(model_outputs, indices_outputs)
-
-                    # Backward pass
-                    loss.backward()
-
-                    # Update weights
-                    optimizer.step()
-                    # print("Loss: {}".format(loss.item()))
-                    # print("#", end='')
-                    # Add
-                    training_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
-                    training_loss += loss.item()
-                    training_total += 1
                 # end for
 
                 # Evaluation mode
                 rnn.eval()
 
                 # Go through the validation set
-                for i, data in enumerate(pan17_loader_dev):
+                for i, data in enumerate(sfgram_loader_dev):
                     # Data
                     inputs, gender, country, [gender_vector, country_vector] = data
-
-                    # Lengths
-                    batch_size = inputs.size(0)
-                    n_tweets = inputs.size(1)
-                    tweets_size = inputs.size(2)
-
-                    # Index targets
-                    indices_outputs = torch.LongTensor(batch_size)
-                    for batch_i in range(batch_size):
-                        indices_outputs[batch_i] = pan17_dataset.gender2num[gender[batch_i]]
-                    # end for
-
-                    # Transform to variable
-                    # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
-                    inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
-
-                    # To GPU
-                    if use_cuda:
-                        inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
-                    # end if
-
-                    # Forward
-                    model_outputs = rnn(inputs, reset_hidden=True)
-
-                    # Class with highest probability
-                    _, predicted_class = torch.max(model_outputs, dim=1)
-
-                    # Compute loss
-                    loss = loss_function(model_outputs, indices_outputs)
-
-                    # Add
-                    validation_loss += loss.item()
-                    validation_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
-                    validation_total += 1
                 # end for
 
                 # Accuracies
@@ -270,43 +183,9 @@ for space in param_space:
             test_total = 0
 
             # Evaluate best model on test set
-            for i, data in enumerate(pan17_loader_test):
+            for i, data in enumerate(sfgram_loader_test):
                 # Data
                 inputs, gender, country, [gender_vector, country_vector] = data
-
-                # Lengths
-                batch_size = inputs.size(0)
-                n_tweets = inputs.size(1)
-                tweets_size = inputs.size(2)
-
-                # Index targets
-                indices_outputs = torch.LongTensor(batch_size)
-                for batch_i in range(batch_size):
-                    indices_outputs[batch_i] = pan17_dataset.gender2num[gender[batch_i]]
-                # end for
-
-                # Transform to variable
-                # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
-                inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
-
-                # To GPU
-                if use_cuda:
-                    inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
-                # end if
-
-                # Forward
-                model_outputs = best_model(inputs, reset_hidden=True)
-
-                # Class with highest probability
-                _, predicted_class = torch.max(model_outputs, dim=1)
-
-                # Compute loss
-                loss = loss_function(model_outputs, indices_outputs)
-
-                # Loss
-                test_loss += loss.item()
-                test_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
-                test_total += 1
             # end for
 
             # Test accuracy

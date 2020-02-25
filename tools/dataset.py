@@ -3,9 +3,52 @@
 #
 
 # Imports
+import torchlanguage
+import torchlanguage.datasets
 import torchlanguage.transforms
 import torch
 from . import settings
+
+
+# Load SFGram dataset
+def load_sfgram_dataset(author, batch_size, block_length=40, k=5):
+    """
+    Load SFGram dataset
+    :param k:
+    :return:
+    """
+    # Load
+    sfgram_dataset = torchlanguage.datasets.SFGramDataset(
+        download=True,
+        root='sfgram',
+        author=author,
+        block_length=block_length,
+        stream=True
+    )
+
+    # Training
+    sfgram_loader_train = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='train', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    # Validation
+    sfgram_loader_dev = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='dev', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    # Test
+    sfgram_loader_test = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='test', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    return sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test
+# end load_sfgram_dataset
 
 
 # Load PAN17 dataset
@@ -22,28 +65,29 @@ def load_pan17_dataset(output_length, output_dim, batch_size, k=10):
         root='pan17',
         output_type='long',
         outputs_length=output_length,
-        output_dim=output_dim
+        output_dim=output_dim,
+        shuffle=True
     )
 
     # Training
     pan17_loader_train = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='train', k=k),
         batch_size=batch_size,
-        shuffle=True
+        shuffle=False
     )
 
     # Validation
     pan17_loader_dev = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='dev', k=k),
         batch_size=batch_size,
-        shuffle=True
+        shuffle=False
     )
 
     # Test
     pan17_loader_test = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='test', k=k),
         batch_size=batch_size,
-        shuffle=True
+        shuffle=False
     )
 
     return pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test
