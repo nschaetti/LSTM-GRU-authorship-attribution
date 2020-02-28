@@ -109,10 +109,10 @@ for space in param_space:
 
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
-            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.001)
+            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.0005)
 
             # Best model
-            best_acc = -1.0
+            best_acc = 0.0
             best_model = None
             no_improv = 0
 
@@ -191,9 +191,9 @@ for space in param_space:
                     # print("Loss: {}".format(loss.item()))
                     # print("#", end='')
                     # Add
-                    training_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
+                    training_acc += torch.sum(predicted_class == indices_outputs).item()
                     training_loss += loss.item()
-                    training_total += 1
+                    training_total += batch_size
                 # end for
 
                 # Evaluation mode
@@ -235,30 +235,82 @@ for space in param_space:
 
                     # Add
                     validation_loss += loss.item()
-                    validation_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
-                    validation_total += 1
+                    validation_acc += torch.sum(predicted_class == indices_outputs).item()
+                    validation_total += batch_size
                 # end for
 
                 # Accuracies
                 training_accuracy = training_acc / training_total * 100.0
                 validation_accuracy = validation_acc / validation_total * 100.0
 
+                # Keep best model
+                if validation_accuracy > best_acc:
+                    print("New best model!")
+                    best_acc = validation_accuracy
+                    best_model = rnn.copy()
+                # end if
+
+                # Test loss
+                test_loss = 0.0
+                test_acc = 0.0
+                test_total = 0
+
+                # Evaluate best model on test set
+                for i, data in enumerate(pan17_loader_test):
+                    # Data
+                    inputs, gender, country, [gender_vector, country_vector] = data
+
+                    # Lengths
+                    batch_size = inputs.size(0)
+                    n_tweets = inputs.size(1)
+                    tweets_size = inputs.size(2)
+
+                    # Index targets
+                    indices_outputs = torch.LongTensor(batch_size)
+                    for batch_i in range(batch_size):
+                        indices_outputs[batch_i] = pan17_dataset.gender2num[gender[batch_i]]
+                    # end for
+
+                    # Transform to variable
+                    # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
+                    inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
+
+                    # To GPU
+                    if use_cuda:
+                        inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
+                    # end if
+
+                    # Forward
+                    model_outputs = best_model(inputs, reset_hidden=True)
+
+                    # Class with highest probability
+                    _, predicted_class = torch.max(model_outputs, dim=1)
+
+                    # Compute loss
+                    loss = loss_function(model_outputs, indices_outputs)
+
+                    # Loss
+                    test_loss += loss.item()
+                    test_acc += torch.sum(predicted_class == indices_outputs).item()
+                    test_total += batch_size
+                # end for
+
+                # Test accuracy
+                test_accuracy = test_acc / test_total * 100.0
+
                 # Show loss
-                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {})".format(
+                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {}), test loss {} ({}%, {})".format(
                     epoch,
                     training_loss / training_total,
                     round(training_accuracy, 2),
                     training_total,
                     validation_loss / validation_total,
                     round(validation_accuracy, 2),
-                    validation_total
+                    validation_total,
+                    test_loss / test_total,
+                    round(test_accuracy, 2),
+                    test_total
                 ))
-
-                # Keep best model
-                if validation_accuracy > best_acc:
-                    best_acc = validation_accuracy
-                    best_model = rnn
-                # end if
 
                 # Print longest tweet
                 # print(longest_tweet)
@@ -305,8 +357,8 @@ for space in param_space:
 
                 # Loss
                 test_loss += loss.item()
-                test_acc += torch.sum(predicted_class == indices_outputs).item() / float(batch_size)
-                test_total += 1
+                test_acc += torch.sum(predicted_class == indices_outputs).item()
+                test_total += batch_size
             # end for
 
             # Test accuracy
@@ -320,7 +372,7 @@ for space in param_space:
             ))
 
             # Print success rate
-            xp.add_result(test_acc / test_total)
+            xp.add_result(test_accuracy)
         # end for
     # end for
 
