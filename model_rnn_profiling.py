@@ -29,6 +29,8 @@ from tools import rnn as rnn_func
 from torch import optim
 import torch.nn as nn
 from torch.autograd import Variable
+import os
+import copy
 import matplotlib.pyplot as plt
 
 #region INIT
@@ -247,7 +249,11 @@ for space in param_space:
                 if validation_accuracy > best_acc:
                     print("New best model!")
                     best_acc = validation_accuracy
-                    best_model = rnn.copy()
+                    torch.save(
+                        rnn.state_dict(),
+                        # open(os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth"), 'wb')
+                        os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth")
+                    )
                 # end if
 
                 # Test loss
@@ -255,11 +261,15 @@ for space in param_space:
                 test_acc = 0.0
                 test_total = 0
 
+                # Load model
+
                 # Evaluate best model on test set
                 for i, data in enumerate(pan17_loader_test):
                     # Data
                     inputs, gender, country, [gender_vector, country_vector] = data
-
+                    # if i == 0:
+                    #     print(gender)
+                    # end if
                     # Lengths
                     batch_size = inputs.size(0)
                     n_tweets = inputs.size(1)
@@ -281,7 +291,7 @@ for space in param_space:
                     # end if
 
                     # Forward
-                    model_outputs = best_model(inputs, reset_hidden=True)
+                    model_outputs = rnn(inputs, reset_hidden=True)
 
                     # Class with highest probability
                     _, predicted_class = torch.max(model_outputs, dim=1)
@@ -321,6 +331,17 @@ for space in param_space:
             test_acc = 0.0
             test_total = 0
 
+            # Load best model
+            rnn.load_state_dict(
+                torch.load(
+                    # open(os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth"), 'rb')
+                    os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth")
+                )
+            )
+
+            # Eval mode
+            rnn.eval()
+
             # Evaluate best model on test set
             for i, data in enumerate(pan17_loader_test):
                 # Data
@@ -347,7 +368,7 @@ for space in param_space:
                 # end if
 
                 # Forward
-                model_outputs = best_model(inputs, reset_hidden=True)
+                model_outputs = rnn(inputs, reset_hidden=True)
 
                 # Class with highest probability
                 _, predicted_class = torch.max(model_outputs, dim=1)
