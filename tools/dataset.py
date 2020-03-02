@@ -52,7 +52,7 @@ def load_sfgram_dataset(author, batch_size, block_length=40, k=5):
 
 
 # Load PAN17 dataset
-def load_pan17_dataset(output_length, output_dim, batch_size, k=10):
+def load_pan17_dataset(output_length, output_dim, batch_size, trained, k=10):
     """
     Load PAN 17 dataset
     :param k:
@@ -66,6 +66,7 @@ def load_pan17_dataset(output_length, output_dim, batch_size, k=10):
         output_type='long',
         outputs_length=output_length,
         output_dim=output_dim,
+        trained=trained,
         shuffle=True
     )
 

@@ -58,5 +58,12 @@ ce_text_length = 15
 output_length = dict()
 output_length['wv'] = 110
 output_length['c1'] = 163
-output_length['c2'] = 80
-output_length['c3'] = 50
+output_length['c2'] = 162
+output_length['c3'] = 161
+
+# Voc size
+profiling_voc_size = dict()
+profiling_voc_size['wv'] = 420321
+profiling_voc_size['c1'] = 1694
+profiling_voc_size['c2'] = 25004
+profiling_voc_size['c3'] = 354231

@@ -54,7 +54,8 @@ for space in param_space:
     pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test = dataset.load_pan17_dataset(
         output_length=settings.output_length[feature],
         output_dim=settings.input_dims[feature],
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        trained=not args.pretrained
     )
 
     # Print authors
@@ -101,7 +102,7 @@ for space in param_space:
                 cuda=args.cuda,
                 embedding_dim=embedding_size,
                 hidden_dim=hidden_size,
-                vocab_size=settings.voc_size[feature],
+                vocab_size=settings.profiling_voc_size[feature],
                 rnn_type=rnn_type,
                 num_layers=num_layers,
                 dropout=dropout,
@@ -140,11 +141,11 @@ for space in param_space:
 
                 # Compute longest tweet
                 longest_tweet = 0
-
+                # max_index = 0
                 # Go through the training set
                 for i, data in enumerate(pan17_loader_train):
                     # Data
-                    inputs, gender, country, [gender_vector, country_vector] = data
+                    inputs, gender, country, [gender_vector, country_vector], input_lengths = data
 
                     # Update tweet length
                     if pan17_dataset.long_tweet > longest_tweet:
@@ -163,20 +164,19 @@ for space in param_space:
                     # end for
 
                     # Transform to variable
-                    # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
                     inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
 
                     # To GPU
                     if use_cuda:
-                        inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
+                        inputs, indices_outputs,  = inputs.cuda(), indices_outputs.cuda()
+                        input_lengths = input_lengths.cuda()
                     # end if
 
                     # Zero grad
                     rnn.zero_grad()
 
                     # Forward
-                    model_outputs = rnn(inputs, reset_hidden=True)
-                    # print(model_outputs)
+                    model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
                     # print(indices_outputs)
 
                     # Class with highest probability
@@ -190,12 +190,14 @@ for space in param_space:
 
                     # Update weights
                     optimizer.step()
-                    # print("Loss: {}".format(loss.item()))
-                    # print("#", end='')
+
                     # Add
                     training_acc += torch.sum(predicted_class == indices_outputs).item()
                     training_loss += loss.item()
                     training_total += batch_size
+                    """if torch.max(inputs) > max_index:
+                        max_index = torch.max(inputs)
+                    # end if"""
                 # end for
 
                 # Evaluation mode
@@ -204,7 +206,7 @@ for space in param_space:
                 # Go through the validation set
                 for i, data in enumerate(pan17_loader_dev):
                     # Data
-                    inputs, gender, country, [gender_vector, country_vector] = data
+                    inputs, gender, country, [gender_vector, country_vector], input_lengths = data
 
                     # Lengths
                     batch_size = inputs.size(0)
@@ -218,16 +220,16 @@ for space in param_space:
                     # end for
 
                     # Transform to variable
-                    # inputs, gender_vector = Variable(inputs), Variable(gender_vector)
                     inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
 
                     # To GPU
                     if use_cuda:
                         inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
+                        input_lengths = input_lengths.cuda()
                     # end if
 
                     # Forward
-                    model_outputs = rnn(inputs, reset_hidden=True)
+                    model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
 
                     # Class with highest probability
                     _, predicted_class = torch.max(model_outputs, dim=1)
@@ -239,8 +241,12 @@ for space in param_space:
                     validation_loss += loss.item()
                     validation_acc += torch.sum(predicted_class == indices_outputs).item()
                     validation_total += batch_size
+                    """if torch.max(inputs) > max_index:
+                        max_index = torch.max(inputs)
+                    # end if"""
                 # end for
-
+                """print(max_index)
+                exit()"""
                 # Accuracies
                 training_accuracy = training_acc / training_total * 100.0
                 validation_accuracy = validation_acc / validation_total * 100.0
@@ -266,7 +272,7 @@ for space in param_space:
                 # Evaluate best model on test set
                 for i, data in enumerate(pan17_loader_test):
                     # Data
-                    inputs, gender, country, [gender_vector, country_vector] = data
+                    inputs, gender, country, [gender_vector, country_vector], input_lengths = data
                     # if i == 0:
                     #     print(gender)
                     # end if
@@ -291,7 +297,8 @@ for space in param_space:
                     # end if
 
                     # Forward
-                    model_outputs = rnn(inputs, reset_hidden=True)
+                    # print(torch.max(inputs))
+                    model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
 
                     # Class with highest probability
                     _, predicted_class = torch.max(model_outputs, dim=1)
@@ -345,7 +352,7 @@ for space in param_space:
             # Evaluate best model on test set
             for i, data in enumerate(pan17_loader_test):
                 # Data
-                inputs, gender, country, [gender_vector, country_vector] = data
+                inputs, gender, country, [gender_vector, country_vector], input_lengths = data
 
                 # Lengths
                 batch_size = inputs.size(0)
@@ -368,7 +375,7 @@ for space in param_space:
                 # end if
 
                 # Forward
-                model_outputs = rnn(inputs, reset_hidden=True)
+                model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
 
                 # Class with highest probability
                 _, predicted_class = torch.max(model_outputs, dim=1)

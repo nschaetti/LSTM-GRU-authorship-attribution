@@ -35,17 +35,36 @@ class TweetEmbRNN(nn.Module):
         self.num_layers = num_layers
         self.rnn_type = rnn_type
         self.batch_size = batch_size
+        self.embedding_dim = embedding_dim
 
         # Embeddings
-        self.embedding_layer = nn.Embedding(vocab_size, embedding_dim)
+        self.embedding_layer = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
 
         # RNN
         if rnn_type == 'lstm':
-            self.rnn = nn.LSTM(embedding_dim, hidden_dim, num_layers=num_layers, dropout=dropout)
+            self.rnn = nn.LSTM(
+                embedding_dim,
+                hidden_dim,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_first=True
+            )
         elif rnn_type == 'rnn':
-            self.rnn = nn.RNN(embedding_dim, hidden_dim, num_layers=num_layers, dropout=dropout)
+            self.rnn = nn.RNN(
+                embedding_dim,
+                hidden_dim,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_first=True
+            )
         else:
-            self.rnn = nn.GRU(embedding_dim, hidden_dim, num_layers=num_layers, dropout=dropout)
+            self.rnn = nn.GRU(
+                embedding_dim,
+                hidden_dim,
+                num_layers=num_layers,
+                dropout=dropout,
+                batch_first=True
+            )
         # end if
 
         # Hidden state to outputs
@@ -53,9 +72,6 @@ class TweetEmbRNN(nn.Module):
 
         # Dropout
         self.dropout_layer = nn.Dropout(p=output_dropout)
-
-        # Init hiddens
-        self.hidden = self.init_hidden(batch_size)
     # end __init__
 
     # Init hidden state
@@ -67,8 +83,8 @@ class TweetEmbRNN(nn.Module):
         """
         if self.rnn_type == 'lstm':
             # Hidden and cell
-            hidden = torch.zeros(self.num_layers, batch_size * n_tweets, self.hidden_dim)
-            cell = torch.zeros(self.num_layers, batch_size * n_tweets, self.hidden_dim)
+            hidden = torch.randn(self.num_layers, batch_size * n_tweets, self.hidden_dim)
+            cell = torch.randn(self.num_layers, batch_size * n_tweets, self.hidden_dim)
 
             # To GPU
             if next(self.parameters()).is_cuda:
@@ -83,7 +99,7 @@ class TweetEmbRNN(nn.Module):
             return hidden, cell
         else:
             # Hidden
-            hidden = torch.zeros(self.num_layers, batch_size, self.hidden_dim)
+            hidden = torch.randn(self.num_layers, batch_size * n_tweets, self.hidden_dim)
 
             # To GPU
             if next(self.parameters()).is_cuda:
@@ -105,28 +121,43 @@ class TweetEmbRNN(nn.Module):
         :return:
         """
         # Sizes
-        batch_size, n_tweets, tweet_length, embedding_dim = x.size()
-        # print(x.size())
+        batch_size, n_tweets, tweet_length = x.size()
+
+        # Max. length
+        max_tweet_length = torch.max(x_lengths).item()
+
         # Init hiddens
         if reset_hidden:
-            self.hidden = self.init_hidden(batch_size)
+            self.hidden = self.init_hidden(batch_size, n_tweets)
         # end if
 
         # Embedding
         x = self.embedding_layer(x)
 
+        # Contiguous inputs
+        x = x.contiguous()
+
+        # Resize to batch * n_tweets, tweet_length, embedding_dim
+        x = x.reshape(batch_size * n_tweets, tweet_length, self.embedding_dim)
+        x_lengths = x_lengths.reshape(batch_size * n_tweets)
+
+        # Init hiddens
+        if reset_hidden:
+            self.hidden = self.init_hidden(batch_size, n_tweets)
+        # end if
+
         # Pack to hide padded item to RNN
-        x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True)
+        x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
 
         # Exec. RNN
-        x, self.hidden = self.rnn(x, self.hidden)
+        x, result_hidden = self.rnn(x)
+        self.hidden = result_hidden
 
         # Undo packing
         x, _ = utils.rnn.pad_packed_sequence(x, batch_first=True)
 
-        # View to (length, output size)
+        # Contiguous
         x = x.contiguous()
-        x = x.view((-1, self.hidden_dim))
 
         # Dropout
         x = self.dropout_layer(x)
@@ -137,8 +168,11 @@ class TweetEmbRNN(nn.Module):
         # Author scores
         x = F.log_softmax(x, dim=1)
 
-        # Back to (batch_size, seq_len, nb_tags)
-        x = x.view(batch_size, seq_len, self.n_authors)
+        # Resize back
+        x = x.reshape(batch_size, n_tweets, max_tweet_length, 2)
+
+        # Average
+        x = torch.mean(torch.mean(x, dim=2), dim=1)
 
         return x
     # end forward

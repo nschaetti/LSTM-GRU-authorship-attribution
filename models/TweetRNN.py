@@ -96,7 +96,7 @@ class TweetRNN(nn.Module):
     # end init_hidden
 
     # Forward
-    def forward(self, x, hidden_mask=None, reset_hidden=True):
+    def forward(self, x, x_lengths, reset_hidden=True):
         """
         Forward pass
         :param x:
@@ -104,34 +104,34 @@ class TweetRNN(nn.Module):
         """
         # Sizes
         batch_size, n_tweets, tweet_length, embedding_dim = x.size()
-        # print("x: {}".format(x.size()))
+
         # Contiguous inputs
         x = x.contiguous()
 
         # Resize to batch * n_tweets, tweet_length, embedding_dim
         x = x.reshape(batch_size * n_tweets, tweet_length, embedding_dim)
-        # print("x: {}".format(x.size()))
+
         # Init hiddens
         if reset_hidden:
             self.hidden = self.init_hidden(batch_size, n_tweets)
         # end if
-        # print("hidden: {}".format(self.hidden.size()))
+
         # Exec. RNN
         x, result_hidden = self.rnn(x)
         self.hidden = result_hidden
-        # print("x: {}".format(x.size()))
+
         # Dropout
         x = self.dropout_layer(x)
-        # print("x: {}".format(x.size()))
+
         # Linear layer
         x = self.hidden2outputs(x)
-        # print("x: {}".format(x.size()))
+
         # Author scores
         x = F.log_softmax(x, dim=1)
-        # print("x: {}".format(x.size()))
+
         # Resize back
         x = x.reshape(batch_size, n_tweets, tweet_length, 2)
-        # print("x: {}".format(x.size()))
+
         # Average
         x = torch.mean(torch.mean(x, dim=2), dim=1)
 
