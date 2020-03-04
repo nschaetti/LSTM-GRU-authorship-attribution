@@ -94,13 +94,13 @@ for space in param_space:
             )
 
             # Model
-            rnn = rnn_func.create_profiling_model(
+            rnn = rnn_func.create_verification_model(
                 feature=feature,
                 pretrained=args.pretrained,
                 cuda=args.cuda,
                 embedding_dim=embedding_size,
                 hidden_dim=hidden_size,
-                vocab_size=settings.voc_size[feature],
+                vocab_size=settings.verification_voc_size[feature],
                 rnn_type=rnn_type,
                 num_layers=num_layers,
                 dropout=dropout,
@@ -118,18 +118,15 @@ for space in param_space:
             no_improv = 0
 
             # Loss function
-            # loss_function = nn.NLLLoss()
-            loss_function = nn.CrossEntropyLoss()
+            loss_function = nn.MSELoss()
 
             # For each epoch
             for epoch in range(args.epoch):
                 # Training, validation losses
                 training_loss = 0.0
                 training_total = 0.0
-                training_acc = 0.0
                 validation_loss = 0.0
                 validation_total = 0.0
-                validation_acc = 0.0
 
                 # Number of samples
                 n_samples = len(sfgram_loader_train)
@@ -140,7 +137,7 @@ for space in param_space:
                 # Go through the training set
                 for i, data in enumerate(sfgram_loader_train):
                     # Data
-                    inputs, gender, country, [gender_vector, country_vector] = data
+                    inputs, outputs = data
                 # end for
 
                 # Evaluation mode
@@ -149,57 +146,37 @@ for space in param_space:
                 # Go through the validation set
                 for i, data in enumerate(sfgram_loader_dev):
                     # Data
-                    inputs, gender, country, [gender_vector, country_vector] = data
+                    inputs, outputs = data
                 # end for
 
-                # Accuracies
-                training_accuracy = training_acc / training_total * 100.0
-                validation_accuracy = validation_acc / validation_total * 100.0
-
                 # Show loss
-                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {})".format(
+                print("epoch {}, training loss {} ({}), validation loss {} ({})".format(
                     epoch,
                     training_loss / training_total,
-                    round(training_accuracy, 2),
                     training_total,
                     validation_loss / validation_total,
-                    round(validation_accuracy, 2),
                     validation_total
                 ))
-
-                # Keep best model
-                if validation_accuracy > best_acc:
-                    best_acc = validation_accuracy
-                    best_model = rnn
-                # end if
-
-                # Print longest tweet
-                # print(longest_tweet)
             # end for
 
             # Test loss
             test_loss = 0.0
-            test_acc = 0.0
             test_total = 0
 
             # Evaluate best model on test set
             for i, data in enumerate(sfgram_loader_test):
                 # Data
-                inputs, gender, country, [gender_vector, country_vector] = data
+                inputs, outputs = data
             # end for
 
-            # Test accuracy
-            test_accuracy = test_acc / test_total * 100.0
-
             # Show loss
-            print("Test loss {} ({}% / {})".format(
+            print("Test loss {} ({})".format(
                 test_loss / test_total,
-                round(test_accuracy, 2),
                 test_total
             ))
 
             # Print success rate
-            xp.add_result(test_acc / test_total)
+            xp.add_result(test_loss / test_total)
         # end for
     # end for
 

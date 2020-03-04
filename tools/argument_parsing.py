@@ -41,13 +41,13 @@ def parser_training():
     # LSTM/GRU arguments
     args.add_argument(command="--rnn-type", name="rnn_type", type=str, help="Type of RNN (rnn, lstm, gru)", default='lstm', extended=True)
     args.add_argument(command="--hidden-size", name="hidden_size", type=float, help="Size of the hidden vector",
-                      required=True, extended=True)
+                      required=False, extended=True, default=100)
     args.add_argument(command="--cell-size", name="cell_size", type=float, help="Size of the cell vector",
-                      required=False, extended=True)
+                      required=False, extended=True, default=100)
     args.add_argument(command="--embedding-size", name="embedding_size", type=float, help="Size of the embedding",
-                      required=True, extended=True)
+                      required=False, extended=True, default=300)
     args.add_argument(command="--learning-window", name="learning_window", type=int, help="Size of the learning window",
-                      required=False, extended=True)
+                      required=False, extended=True, default=40)
     args.add_argument(command="--num-layers", name="num_layers", type=int, help="Number of recurrent layers", default=1, extended=True)
     args.add_argument(command="--dropout", name="dropout", type=float, help="Dropout", default=0, extended=True)
     args.add_argument(command="--output-dropout", name="output_dropout", type=float, help="Output dropout", default=0, extended=True)

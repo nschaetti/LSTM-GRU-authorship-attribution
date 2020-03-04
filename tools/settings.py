@@ -54,6 +54,8 @@ input_dims['c3'] = 60
 # Character Encoder
 ce_text_length = 15
 
+# PROFILING
+
 # Output length
 output_length = dict()
 output_length['wv'] = 110
@@ -67,3 +69,12 @@ profiling_voc_size['wv'] = 420321
 profiling_voc_size['c1'] = 1694
 profiling_voc_size['c2'] = 25004
 profiling_voc_size['c3'] = 354231
+
+# AUTHOR VERIFICATION
+
+# Voc size
+verification_voc_size = dict()
+verification_voc_size['wv'] = 420321
+verification_voc_size['c1'] = 1694
+verification_voc_size['c2'] = 25004
+verification_voc_size['c3'] = 354231
