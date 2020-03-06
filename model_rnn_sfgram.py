@@ -28,8 +28,6 @@ from tools import argument_parsing, dataset, functions, features, settings
 from tools import rnn as rnn_func
 from torch import optim
 import torch.nn as nn
-from torch.autograd import Variable
-import matplotlib.pyplot as plt
 
 #region INIT
 
@@ -49,23 +47,18 @@ for space in param_space:
     num_layers, dropout, output_dropout = functions.get_params(space)
 
     # Load SFGram dataset
-    sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_dataset(
+    sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_precomputed_dataset(
         block_length=40,
         batch_size=args.batch_size,
-        author='ASIMOV'
+        author='ASIMOV',
+        pretrained=args.pretrained,
+        feature=feature
     )
 
     # Print dataset information
-    xp.write("Dataset length : {}".format(len(sfgram_dataset)), log_level=0)
-    xp.write("Number of texts : {}".format(len(sfgram_dataset.texts)), log_level=0)
-
-    # Choose the right transformer
-    sfgram_dataset.transform = features.create_transformer(
-        feature,
-        args.pretrained,
-        args.embedding_path,
-        lang
-    )
+    xp.write("Dataset length : {}".format(len(sfgram_dataset.data_length)), log_level=0)
+    xp.write("Number of texts : {}".format(len(sfgram_dataset.dataset_size)), log_level=0)
+    xp.write("Number of trues : {}".format(len(sfgram_dataset.trues_count)), log_level=0)
 
     # Set experience state
     xp.set_state(space)
@@ -84,14 +77,6 @@ for space in param_space:
             xp.set_fold_state(k)
             sfgram_loader_train.dataset.set_fold(k)
             sfgram_loader_test.dataset.set_fold(k)
-
-            # Choose the right transformer
-            sfgram_dataset.transform = features.create_transformer(
-                feature,
-                args.pretrained,
-                args.embedding_path,
-                lang
-            )
 
             # Model
             rnn = rnn_func.create_verification_model(
@@ -113,9 +98,7 @@ for space in param_space:
             optimizer = torch.optim.Adam(rnn.parameters(), lr=0.001)
 
             # Best model
-            best_acc = -1.0
             best_model = None
-            no_improv = 0
 
             # Loss function
             loss_function = nn.MSELoss()
@@ -138,6 +121,9 @@ for space in param_space:
                 for i, data in enumerate(sfgram_loader_train):
                     # Data
                     inputs, outputs = data
+                    print(inputs.size())
+                    print(outputs.size())
+                    exit()
                 # end for
 
                 # Evaluation mode

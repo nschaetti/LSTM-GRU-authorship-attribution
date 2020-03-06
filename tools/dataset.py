@@ -10,8 +10,54 @@ import torch
 from . import settings
 
 
+# Load precomputed SFGram dataset
+def load_sfgram_precomputed_dataset(author, batch_size, feature, pretrained, block_length=40, k=5):
+    """
+    Load precomputed SFGram dataset
+    :param author:
+    :param batch_size:
+    :param feature:
+    :param pretrained:
+    :param block_length:
+    :param k:
+    :return:
+    """
+    # Load
+    sfgram_dataset = torchlanguage.datasets.SFGramBlockDataset(
+        root='sfgram_blocks',
+        author=author,
+        block_length=block_length,
+        trained=not pretrained,
+        feature=feature
+    )
+
+    # Training
+    sfgram_loader_train = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='train', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    # Validation
+    sfgram_loader_dev = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='dev', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    # Test
+    sfgram_loader_test = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='test', k=k),
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    return sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test
+# end load_sfgram_precomputed_dataset
+
+
 # Load SFGram dataset
-def load_sfgram_dataset(author, batch_size, block_length=40, k=5):
+def load_sfgram_dataset(author, batch_size, load_type, block_length=40, k=5):
     """
     Load SFGram dataset
     :param k:
@@ -20,10 +66,11 @@ def load_sfgram_dataset(author, batch_size, block_length=40, k=5):
     # Load
     sfgram_dataset = torchlanguage.datasets.SFGramDataset(
         download=True,
-        root='sfgram',
+        root='data',
         author=author,
         block_length=block_length,
-        stream=True
+        stream=True,
+        load_type=load_type
     )
 
     # Training

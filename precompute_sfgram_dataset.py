@@ -52,7 +52,8 @@ for space in param_space:
     sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_dataset(
         block_length=40,
         batch_size=args.batch_size,
-        author='ASIMOV'
+        author='ASIMOV',
+        load_type=feature + ("" if args.pretrained else "T")
     )
 
     # Print dataset information
