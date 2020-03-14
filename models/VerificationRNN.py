@@ -121,7 +121,11 @@ class VerificationRNN(nn.Module):
         :return:
         """
         # Sizes
-        batch_size, segment_length = x.size()
+        if not self.use_embedding_layer:
+            batch_size, segment_length, input_dim = x.size()
+        else:
+            batch_size, segment_length = x.size()
+        # end if
 
         # Init hiddens
         if reset_hidden:
@@ -149,7 +153,7 @@ class VerificationRNN(nn.Module):
         x = self.hidden2outputs(x)
 
         # Author scores
-        x = F.sigmoid(x)
+        x = torch.sigmoid(x)
 
         return x
     # end forward

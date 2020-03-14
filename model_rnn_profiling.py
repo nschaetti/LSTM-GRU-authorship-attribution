@@ -30,8 +30,6 @@ from torch import optim
 import torch.nn as nn
 from torch.autograd import Variable
 import os
-import copy
-import matplotlib.pyplot as plt
 
 #region INIT
 

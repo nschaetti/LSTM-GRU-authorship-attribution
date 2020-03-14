@@ -11,7 +11,7 @@ from . import settings
 
 
 # Load precomputed SFGram dataset
-def load_sfgram_precomputed_dataset(author, batch_size, feature, pretrained, block_length=40, k=5):
+def load_sfgram_precomputed_dataset(author, batch_size, feature, pretrained, block_length=40, k=5, dev_per_file=False):
     """
     Load precomputed SFGram dataset
     :param author:
@@ -22,37 +22,54 @@ def load_sfgram_precomputed_dataset(author, batch_size, feature, pretrained, blo
     :param k:
     :return:
     """
-    # Load
-    sfgram_dataset = torchlanguage.datasets.SFGramBlockDataset(
-        root='sfgram_blocks',
-        author=author,
-        block_length=block_length,
-        trained=not pretrained,
-        feature=feature
-    )
-
     # Training
     sfgram_loader_train = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='train', k=k),
+        torchlanguage.datasets.SFGramBlockDataset(
+            root='sfgram_blocks',
+            author=author,
+            block_length=block_length,
+            trained=not pretrained,
+            feature=feature,
+            k=k,
+            set='train'
+        ),
         batch_size=batch_size,
-        shuffle=False
+        shuffle=True
     )
 
     # Validation
     sfgram_loader_dev = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='dev', k=k),
+        torchlanguage.datasets.SFGramBlockDataset(
+            root='sfgram_blocks',
+            author=author,
+            block_length=block_length,
+            trained=not pretrained,
+            feature=feature,
+            k=k,
+            set='dev',
+            per_file=dev_per_file
+        ),
         batch_size=batch_size,
-        shuffle=False
+        shuffle=True
     )
 
     # Test
     sfgram_loader_test = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidationWithDev(sfgram_dataset, train='test', k=k),
-        batch_size=batch_size,
+        torchlanguage.datasets.SFGramBlockDataset(
+            root='sfgram_blocks',
+            author=author,
+            block_length=block_length,
+            trained=not pretrained,
+            feature=feature,
+            k=k,
+            set='test',
+            per_file=True
+        ),
+        batch_size=1,
         shuffle=False
     )
 
-    return sfgram_dataset, sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test
+    return sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test
 # end load_sfgram_precomputed_dataset
 
 

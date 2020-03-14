@@ -6,6 +6,7 @@
 from . import settings
 from models.TweetRNN import TweetRNN
 from models.TweetEmbRNN import TweetEmbRNN
+from models.VerificationRNN import VerificationRNN
 
 
 # Create model for author verification
@@ -28,9 +29,11 @@ def create_verification_model(feature, pretrained, cuda, embedding_dim=300, hidd
     """
     # Feature
     if pretrained:
-        rnn = TweetRNN(
-            input_dim=settings.input_dims[feature],
+        rnn = VerificationRNN(
+            embedding_dim=settings.input_dims[feature],
+            use_embedding_layer=False,
             hidden_dim=hidden_dim,
+            vocab_size=vocab_size,
             rnn_type=rnn_type,
             num_layers=num_layers,
             dropout=dropout,
@@ -39,8 +42,9 @@ def create_verification_model(feature, pretrained, cuda, embedding_dim=300, hidd
         )
     else:
         # Model
-        rnn = TweetEmbRNN(
+        rnn = VerificationRNN(
             embedding_dim=embedding_dim,
+            use_embedding_layer=True,
             hidden_dim=hidden_dim,
             vocab_size=vocab_size,
             rnn_type=rnn_type,

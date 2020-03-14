@@ -70,6 +70,8 @@ def parser_training():
     args.add_argument(command="--max-length", name="max_length", type=int, help="Maximum sequence length",
                       required=False, extended=False)
     args.add_argument(command="--precomputed-features", name="precomputed_features", type=str, help="Precomputed features", required=False, extended=False)
+    args.add_argument(command="--zero-weight", name="zero_weight", type=float, help="Weight given to zeros (SFGram)",
+                      default=1, required=False, extended=False)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
