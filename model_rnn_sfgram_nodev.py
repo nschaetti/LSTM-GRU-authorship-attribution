@@ -32,6 +32,105 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
 
+
+# Evaluation pass
+def evaluation_pass(sfgram_loader_set, thrs):
+    """
+    Evaluation pass
+    :param sfgram_loader_set:
+    :return:
+    """
+    # Test loss and total
+    set_loss = 0.0
+    set_total = 0.0
+
+    # Test f1-scores
+    set_true_positives = torch.zeros(n_threshold)
+    set_false_positives = torch.zeros(n_threshold)
+    set_false_negatives = torch.zeros(n_threshold)
+    set_true_negatives = torch.zeros(n_threshold)
+
+    # Set f1-scores
+    set_f1_scores = torch.zeros(n_threshold)
+
+    # Evaluate best model on test set
+    for i, data in enumerate(sfgram_loader_set):
+        # Data
+        inputs, outputs, document_true = data
+
+        # Transform to variable
+        inputs, outputs = Variable(inputs), Variable(outputs)
+
+        # To GPU
+        if use_cuda:
+            inputs, outputs = inputs.cuda(), outputs.cuda()
+        # end if
+
+        # Forward
+        model_outputs = rnn(inputs, reset_hidden=True)
+
+        # Compute loss
+        loss = loss_function(model_outputs, outputs)
+
+        # Test each threshold
+        for threshold_i, threshold in enumerate(thresholds):
+            # Threshold prediction
+            if use_cuda:
+                threshold_prediction = torch.zeros(model_outputs.size()).cuda()
+            else:
+                threshold_prediction = torch.zeros(model_outputs.size())
+            # end if
+
+            # Above threshold => true, false otherwise
+            threshold_prediction[model_outputs > threshold] = 1.0
+            threshold_prediction[model_outputs <= threshold] = 0.0
+
+            # True positives
+            true_index = threshold_prediction == 1.0
+            false_index = threshold_prediction == 0.0
+
+            # Add counts
+            set_true_positives[threshold_i] += float((threshold_prediction[true_index] == outputs[true_index]).sum())
+            set_false_positives[threshold_i] += float((threshold_prediction[true_index] != outputs[true_index]).sum())
+            set_true_negatives[threshold_i] += float((threshold_prediction[false_index] == outputs[false_index]).sum())
+            set_false_negatives[threshold_i] += float((threshold_prediction[false_index] != outputs[false_index]).sum())
+        # end for
+
+        # Add
+        set_loss += loss.item()
+        set_total += 1
+    # end for
+
+    # Compute F1-score for each threshold
+    for threshold_i, threshold in enumerate(thrs):
+        # Precision
+        if set_true_positives[threshold_i] + set_false_positives[threshold_i] > 0:
+            precision = set_true_positives[threshold_i] / (
+                    set_true_positives[threshold_i] + set_false_positives[threshold_i])
+        else:
+            precision = 0.0
+        # end if
+
+        # Recall
+        if set_true_positives[threshold_i] + set_false_negatives[threshold_i] > 0.0:
+            recall = set_true_positives[threshold_i] / (
+                    set_true_positives[threshold_i] + set_false_negatives[threshold_i])
+        else:
+            recall = 0.0
+        # end if
+
+        # Compute F1
+        if precision > 0 and recall > 0:
+            set_f1_scores[threshold_i] = 2.0 * (precision * recall) / (precision + recall)
+        else:
+            set_f1_scores[threshold_i] = 0.0
+        # end if
+    # end for
+
+    return set_total, set_loss, set_f1_scores
+# end evaluation_pass
+
+
 #region INIT
 
 # Param
@@ -148,10 +247,7 @@ for space in param_space:
                 for i, data in enumerate(sfgram_loader_train):
                     # Data
                     inputs, outputs, document_true = data
-                    """print("TRAIN input size : {}".format(inputs.size()))
-                    print("TRAIN output size : {}".format(outputs.size()))
-                    print("TRAIN output sum : {}".format(outputs.sum()))
-                    print("TRAIN document true : {}".format(document_true.size()))"""
+
                     # Lengths
                     batch_size = inputs.size(0)
                     block_length = inputs.size(1)
@@ -255,177 +351,51 @@ for space in param_space:
                     # end if
                 # end for
 
-                # Max. test f1
+                # Evaluate dev and test
+                dev_total, dev_loss, dev_f1_scores = evaluation_pass(sfgram_loader_dev, thresholds)
+                test_total, test_loss, test_f1_scores = evaluation_pass(sfgram_loader_test, thresholds)
+
+                # Final F1-score
+                final_f1_scores = torch.zeros(n_threshold)
+
+                # Compute F1-score for each threshold
+                for threshold_i, threshold in enumerate(thresholds):
+                    final_f1_scores[threshold_i] = (dev_f1_scores[threshold_i] + test_f1_scores[threshold_i]) / 2.0
+                # end for
+
+                # Max. train and test f1
                 max_train_f1 = torch.max(train_f1_score).item()
+                max_dev_f1 = torch.max(dev_f1_scores).item()
+                max_test_f1 = torch.max(test_f1_scores).item()
+                max_final_f1 = torch.max(final_f1_scores).item()
 
                 # Show loss
-                print("epoch {}, training loss {} ({}), training average F1 {}".format(
+                print("epoch {}, training loss {} ({}), training F1 {}, dev loss {} ({}), dev F1 {}, test loss {} ({}), test F1 {}, final loss {} ({}), final F1 {}".format(
                     epoch,
                     round(training_loss / training_total, 5),
                     training_total,
-                    round(max_train_f1, 5)
+                    round(max_train_f1, 5),
+                    round(dev_loss / dev_total, 5),
+                    dev_total,
+                    round(max_dev_f1, 5),
+                    round(test_loss / test_total, 5),
+                    test_total,
+                    round(max_test_f1, 5),
+                    round((dev_loss + test_loss) / (dev_total + test_total), 5),
+                    dev_total + test_total,
+                    round(max_final_f1, 5)
                 ))
             # end for
 
-            # Total inputs
-            total_inputs = None
-            total_outputs = None
-
-            # Test loss and total
-            test_loss = 0.0
-            test_total = 0.0
-
-            # Test f1-scores
-            test_f1_score = torch.zeros(n_threshold)
-            test_true_positives = torch.zeros(n_threshold)
-            test_false_positives = torch.zeros(n_threshold)
-            test_false_negatives = torch.zeros(n_threshold)
-            test_true_negatives = torch.zeros(n_threshold)
-
-            # Evaluate best model on test set
-            for i, data in enumerate(sfgram_loader_dev):
-                # Data
-                inputs, outputs, document_true = data
-
-                # Lengths
-                batch_size = inputs.size(0)
-                block_length = inputs.size(1)
-
-                # Transform to variable
-                inputs, outputs = Variable(inputs), Variable(outputs)
-
-                # To GPU
-                if use_cuda:
-                    inputs, outputs = inputs.cuda(), outputs.cuda()
-                # end if
-
-                # Forward
-                model_outputs = rnn(inputs, reset_hidden=True)
-
-                # Compute loss
-                loss = loss_function(model_outputs, outputs)
-
-                # Test each threshold
-                for threshold_i, threshold in enumerate(thresholds):
-                    # Threshold prediction
-                    if use_cuda:
-                        threshold_prediction = torch.zeros(model_outputs.size()).cuda()
-                    else:
-                        threshold_prediction = torch.zeros(model_outputs.size())
-                    # end if
-
-                    # Above threshold => true, false otherwise
-                    threshold_prediction[model_outputs > threshold] = 1.0
-                    threshold_prediction[model_outputs <= threshold] = 0.0
-
-                    # True positives
-                    true_index = threshold_prediction == 1.0
-                    false_index = threshold_prediction == 0.0
-
-                    # Add counts
-                    test_true_positives[threshold_i] += float(
-                        (threshold_prediction[true_index] == outputs[true_index]).sum())
-                    test_false_positives[threshold_i] += float(
-                        (threshold_prediction[true_index] != outputs[true_index]).sum())
-                    test_true_negatives[threshold_i] += float(
-                        (threshold_prediction[false_index] == outputs[false_index]).sum())
-                    test_false_negatives[threshold_i] += float(
-                        (threshold_prediction[false_index] != outputs[false_index]).sum())
-                # end for
-
-                # Add
-                test_loss += loss.item()
-                test_total += 1
-            # end for
-
-            # Evaluate best model on test set
-            for i, data in enumerate(sfgram_loader_test):
-                # Data
-                inputs, outputs, document_true = data
-
-                # Lengths
-                batch_size = inputs.size(0)
-                block_length = inputs.size(1)
-
-                # Transform to variable
-                inputs, outputs = Variable(inputs), Variable(outputs)
-
-                # To GPU
-                if use_cuda:
-                    inputs, outputs = inputs.cuda(), outputs.cuda()
-                # end if
-
-                # Forward
-                model_outputs = rnn(inputs, reset_hidden=True)
-
-                # Compute loss
-                loss = loss_function(model_outputs, outputs)
-
-                # Test each threshold
-                for threshold_i, threshold in enumerate(thresholds):
-                    # Threshold prediction
-                    if use_cuda:
-                        threshold_prediction = torch.zeros(model_outputs.size()).cuda()
-                    else:
-                        threshold_prediction = torch.zeros(model_outputs.size())
-                    # end if
-
-                    # Above threshold => true, false otherwise
-                    threshold_prediction[model_outputs > threshold] = 1.0
-                    threshold_prediction[model_outputs <= threshold] = 0.0
-
-                    # True positives
-                    true_index = threshold_prediction == 1.0
-                    false_index = threshold_prediction == 0.0
-
-                    # Add counts
-                    test_true_positives[threshold_i] += float((threshold_prediction[true_index] == outputs[true_index]).sum())
-                    test_false_positives[threshold_i] += float((threshold_prediction[true_index] != outputs[true_index]).sum())
-                    test_true_negatives[threshold_i] += float((threshold_prediction[false_index] == outputs[false_index]).sum())
-                    test_false_negatives[threshold_i] += float((threshold_prediction[false_index] != outputs[false_index]).sum())
-                # end for
-
-                # Add
-                test_loss += loss.item()
-                test_total += 1
-            # end for
-
-            # Compute F1-score for each threshold
-            for threshold_i, threshold in enumerate(thresholds):
-                # Precision
-                if test_true_positives[threshold_i] + test_false_positives[threshold_i] > 0:
-                    precision = test_true_positives[threshold_i] / (
-                            test_true_positives[threshold_i] + test_false_positives[threshold_i])
-                else:
-                    precision = 0.0
-                # end if
-
-                # Recall
-                if test_true_positives[threshold_i] + test_false_negatives[threshold_i] > 0.0:
-                    recall = test_true_positives[threshold_i] / (
-                            test_true_positives[threshold_i] + test_false_negatives[threshold_i])
-                else:
-                    recall = 0.0
-                # end if
-
-                if precision > 0 and recall > 0:
-                    test_f1_score[threshold_i] = 2.0 * (precision * recall) / (precision + recall)
-                else:
-                    test_f1_score[threshold_i] = 0.0
-                # end if
-            # end for
-
-            # Max. test f1
-            max_test_f1 = torch.max(test_f1_score).item()
-
             # Show loss
-            print("Test loss {}, F1-score {}".format(
-                round(test_loss / test_total, 5),
-                round(max_test_f1, 5)
+            print("Final loss {} ({}), F1-score {}".format(
+                round((dev_loss + test_loss) / (dev_total + test_total), 5),
+                dev_total + test_total,
+                round(max_final_f1, 5)
             ))
 
             # Print success rate
-            xp.add_result(max_test_f1)
+            xp.add_result(max_final_f1)
         # end for
     # end for
 
