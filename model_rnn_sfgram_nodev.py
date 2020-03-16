@@ -34,7 +34,7 @@ import os
 
 
 # Evaluation pass
-def evaluation_pass(sfgram_loader_set, thrs):
+def evaluation_pass(sfgram_loader_set, thrs, rnn_model):
     """
     Evaluation pass
     :param sfgram_loader_set:
@@ -52,7 +52,8 @@ def evaluation_pass(sfgram_loader_set, thrs):
 
     # Set f1-scores
     set_f1_scores = torch.zeros(n_threshold)
-
+    print("################")
+    print(sfgram_loader_set)
     # Evaluate best model on test set
     for i, data in enumerate(sfgram_loader_set):
         # Data
@@ -67,7 +68,7 @@ def evaluation_pass(sfgram_loader_set, thrs):
         # end if
 
         # Forward
-        model_outputs = rnn(inputs, reset_hidden=True)
+        model_outputs = rnn_model(inputs, reset_hidden=True)
 
         # Compute loss
         loss = loss_function(model_outputs, outputs)
@@ -191,6 +192,7 @@ for space in param_space:
             # Change fold state
             xp.set_fold_state(k)
             sfgram_loader_train.dataset.set_fold(k)
+            sfgram_loader_dev.dataset.set_fold(k)
             sfgram_loader_test.dataset.set_fold(k)
 
             # Model
@@ -351,9 +353,12 @@ for space in param_space:
                     # end if
                 # end for
 
+                # Eval mode
+                rnn.eval()
+
                 # Evaluate dev and test
-                dev_total, dev_loss, dev_f1_scores = evaluation_pass(sfgram_loader_dev, thresholds)
-                test_total, test_loss, test_f1_scores = evaluation_pass(sfgram_loader_test, thresholds)
+                dev_total, dev_loss, dev_f1_scores = evaluation_pass(sfgram_loader_dev, thresholds, rnn_model)
+                test_total, test_loss, test_f1_scores = evaluation_pass(sfgram_loader_test, thresholds, rnn_model)
 
                 # Final F1-score
                 final_f1_scores = torch.zeros(n_threshold)

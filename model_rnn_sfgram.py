@@ -91,6 +91,7 @@ for space in param_space:
             # Change fold state
             xp.set_fold_state(k)
             sfgram_loader_train.dataset.set_fold(k)
+            sfgram_loader_dev.set_fold(k)
             sfgram_loader_test.dataset.set_fold(k)
 
             # Model
