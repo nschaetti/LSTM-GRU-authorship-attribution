@@ -74,7 +74,7 @@ profiling_voc_size['c3'] = 354231
 
 # Voc size
 verification_voc_size = dict()
-verification_voc_size['wv'] = 420321
-verification_voc_size['c1'] = 1694
-verification_voc_size['c2'] = 25004
-verification_voc_size['c3'] = 354231
+verification_voc_size['wv'] = 132504
+verification_voc_size['c1'] = 123
+verification_voc_size['c2'] = 7738
+verification_voc_size['c3'] = 76325

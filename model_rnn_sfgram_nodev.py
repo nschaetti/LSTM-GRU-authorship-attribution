@@ -52,8 +52,7 @@ def evaluation_pass(sfgram_loader_set, thrs, rnn_model):
 
     # Set f1-scores
     set_f1_scores = torch.zeros(n_threshold)
-    print("################")
-    print(sfgram_loader_set)
+
     # Evaluate best model on test set
     for i, data in enumerate(sfgram_loader_set):
         # Data
@@ -141,6 +140,7 @@ n_threshold = 20
 thresholds = torch.linspace(0.0, 1.0, n_threshold)
 
 # Seed
+np.random.seed(1)
 torch.manual_seed(1)
 
 # Parse args
@@ -357,8 +357,8 @@ for space in param_space:
                 rnn.eval()
 
                 # Evaluate dev and test
-                dev_total, dev_loss, dev_f1_scores = evaluation_pass(sfgram_loader_dev, thresholds, rnn_model)
-                test_total, test_loss, test_f1_scores = evaluation_pass(sfgram_loader_test, thresholds, rnn_model)
+                dev_total, dev_loss, dev_f1_scores = evaluation_pass(sfgram_loader_dev, thresholds, rnn)
+                test_total, test_loss, test_f1_scores = evaluation_pass(sfgram_loader_test, thresholds, rnn)
 
                 # Final F1-score
                 final_f1_scores = torch.zeros(n_threshold)
@@ -374,21 +374,30 @@ for space in param_space:
                 max_test_f1 = torch.max(test_f1_scores).item()
                 max_final_f1 = torch.max(final_f1_scores).item()
 
+                # Improved performance
+                if max_final_f1 > best_f1:
+                    best_f1 = max_final_f1
+                    add_str = "##"
+                else:
+                    add_str = ""
+                # end if
+
                 # Show loss
-                print("epoch {}, training loss {} ({}), training F1 {}, dev loss {} ({}), dev F1 {}, test loss {} ({}), test F1 {}, final loss {} ({}), final F1 {}".format(
+                print("epoch {}, training loss {} ({}), training F1 {}, dev loss {} ({}), dev F1 {}, test loss {} ({}), test F1 {}, final loss {} ({}), final F1 {} {}".format(
                     epoch,
-                    round(training_loss / training_total, 5),
+                    round(training_loss / training_total, 4),
                     training_total,
-                    round(max_train_f1, 5),
-                    round(dev_loss / dev_total, 5),
+                    round(max_train_f1, 4),
+                    round(dev_loss / dev_total, 4),
                     dev_total,
-                    round(max_dev_f1, 5),
-                    round(test_loss / test_total, 5),
+                    round(max_dev_f1, 4),
+                    round(test_loss / test_total, 4),
                     test_total,
-                    round(max_test_f1, 5),
-                    round((dev_loss + test_loss) / (dev_total + test_total), 5),
+                    round(max_test_f1, 4),
+                    round((dev_loss + test_loss) / (dev_total + test_total), 4),
                     dev_total + test_total,
-                    round(max_final_f1, 5)
+                    round(max_final_f1, 4),
+                    add_str
                 ))
             # end for
 

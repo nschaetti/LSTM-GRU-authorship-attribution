@@ -7,6 +7,8 @@ from . import settings
 from models.TweetRNN import TweetRNN
 from models.TweetEmbRNN import TweetEmbRNN
 from models.VerificationRNN import VerificationRNN
+from models.SingleTweetEmbRNN import SingleTweetEmbRNN
+from models.SingleTweetRNN import SingleTweetRNN
 
 
 # Create model for author verification
@@ -65,7 +67,8 @@ def create_verification_model(feature, pretrained, cuda, embedding_dim=300, hidd
 
 # Create model for profiling
 def create_profiling_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, vocab_size=100,
-                           rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0, batch_size=64):
+                           rnn_type='lstm', num_layers=1, dropout=0.0, output_dropout=0.0, batch_size=64,
+                           per_tweet=False):
     """
     Create model for profiling
     :param feature:
@@ -81,29 +84,57 @@ def create_profiling_model(feature, pretrained, cuda, embedding_dim=300, hidden_
     :param batch_size:
     :return:
     """
-    # Feature
-    if pretrained:
-        rnn = TweetRNN(
-            input_dim=settings.input_dims[feature],
-            hidden_dim=hidden_dim,
-            rnn_type=rnn_type,
-            num_layers=num_layers,
-            dropout=dropout,
-            output_dropout=output_dropout,
-            batch_size=batch_size
-        )
+    # Per tweet
+    if not per_tweet:
+        # Feature
+        if pretrained:
+            rnn = TweetRNN(
+                input_dim=settings.input_dims[feature],
+                hidden_dim=hidden_dim,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                output_dropout=output_dropout,
+                batch_size=batch_size
+            )
+        else:
+            # Model
+            rnn = TweetEmbRNN(
+                embedding_dim=embedding_dim,
+                hidden_dim=hidden_dim,
+                vocab_size=vocab_size,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                output_dropout=output_dropout,
+                batch_size=batch_size
+            )
+        # end if
     else:
-        # Model
-        rnn = TweetEmbRNN(
-            embedding_dim=embedding_dim,
-            hidden_dim=hidden_dim,
-            vocab_size=vocab_size,
-            rnn_type=rnn_type,
-            num_layers=num_layers,
-            dropout=dropout,
-            output_dropout=output_dropout,
-            batch_size=batch_size
-        )
+        # Feature
+        if pretrained:
+            rnn = SingleTweetRNN(
+                input_dim=settings.input_dims[feature],
+                hidden_dim=hidden_dim,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                output_dropout=output_dropout,
+                batch_size=batch_size
+            )
+        else:
+            # Model
+            rnn = SingleTweetEmbRNN(
+                embedding_dim=embedding_dim,
+                hidden_dim=hidden_dim,
+                vocab_size=vocab_size,
+                rnn_type=rnn_type,
+                num_layers=num_layers,
+                dropout=dropout,
+                output_dropout=output_dropout,
+                batch_size=batch_size
+            )
+        # end if
     # end if
 
     # CUDA

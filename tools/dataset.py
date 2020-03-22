@@ -49,7 +49,7 @@ def load_sfgram_precomputed_dataset(author, batch_size, feature, pretrained, blo
             set='dev',
             per_file=dev_per_file
         ),
-        batch_size=batch_size,
+        batch_size=1 if dev_per_file else batch_size,
         shuffle=True
     )
 
@@ -116,12 +116,25 @@ def load_sfgram_dataset(author, batch_size, load_type, block_length=40, k=5):
 
 
 # Load PAN17 dataset
-def load_pan17_dataset(output_length, output_dim, batch_size, trained, k=10):
+def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained, k=10):
     """
-    Load PAN 17 dataset
-    :param k:
-    :return:
-    """
+        Load PAN 17 dataset
+        :param k:
+        :return:
+        """
+    # Load
+    pan17_dataset_per_tweet = torchlanguage.datasets.PAN17AuthorProfiling(
+        lang='en',
+        download=True,
+        root='pan17',
+        output_type='long',
+        outputs_length=output_length,
+        output_dim=output_dim,
+        trained=trained,
+        shuffle=True,
+        per_tweet=True
+    )
+
     # Load
     pan17_dataset = torchlanguage.datasets.PAN17AuthorProfiling(
         lang='en',
@@ -131,14 +144,15 @@ def load_pan17_dataset(output_length, output_dim, batch_size, trained, k=10):
         outputs_length=output_length,
         output_dim=output_dim,
         trained=trained,
-        shuffle=True
+        shuffle=True,
+        per_tweet=False
     )
 
     # Training
     pan17_loader_train = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='train', k=k),
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset_per_tweet, train='train', k=k),
         batch_size=batch_size,
-        shuffle=False
+        shuffle=True
     )
 
     # Validation
@@ -153,6 +167,51 @@ def load_pan17_dataset(output_length, output_dim, batch_size, trained, k=10):
         torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='test', k=k),
         batch_size=batch_size,
         shuffle=False
+    )
+
+    return pan17_dataset, pan17_dataset_per_tweet, pan17_loader_train, pan17_loader_dev, pan17_loader_test
+# end load_pan17_dataset
+
+
+# Load PAN17 dataset
+def load_pan17_dataset(output_length, output_dim, batch_size, trained, per_tweet=False, k=10):
+    """
+    Load PAN 17 dataset
+    :param k:
+    :return:
+    """
+    # Load
+    pan17_dataset = torchlanguage.datasets.PAN17AuthorProfiling(
+        lang='en',
+        download=True,
+        root='pan17',
+        output_type='long',
+        outputs_length=output_length,
+        output_dim=output_dim,
+        trained=trained,
+        shuffle=True,
+        per_tweet=per_tweet
+    )
+
+    # Training
+    pan17_loader_train = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='train', k=k),
+        batch_size=batch_size,
+        shuffle=True if per_tweet else False
+    )
+
+    # Validation
+    pan17_loader_dev = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='dev', k=k),
+        batch_size=batch_size,
+        shuffle=True if per_tweet else False
+    )
+
+    # Test
+    pan17_loader_test = torch.utils.data.DataLoader(
+        torchlanguage.utils.CrossValidationWithDev(pan17_dataset, train='test', k=k),
+        batch_size=batch_size,
+        shuffle=True if per_tweet else False
     )
 
     return pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test

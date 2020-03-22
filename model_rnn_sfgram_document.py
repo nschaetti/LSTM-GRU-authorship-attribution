@@ -61,7 +61,8 @@ for space in param_space:
         batch_size=args.batch_size,
         author=args.author0,
         pretrained=args.pretrained,
-        feature=feature
+        feature=feature,
+        dev_per_file=True
     )
 
     # Print dataset information
@@ -108,9 +109,6 @@ for space in param_space:
                 output_dropout=output_dropout,
                 batch_size=args.batch_size
             )
-
-            # RNN
-            print(rnn)
 
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
@@ -330,26 +328,35 @@ for space in param_space:
 
                     # Test each threshold
                     for threshold_i, threshold in enumerate(thresholds):
-                        # Threshold prediction
-                        if use_cuda:
-                            threshold_prediction = torch.zeros(model_outputs.size()).cuda()
+                        # Prediction
+                        if torch.sum(model_outputs > threshold) == 0.0:
+                            model_prediction = 0
                         else:
-                            threshold_prediction = torch.zeros(model_outputs.size())
+                            model_prediction = 1
                         # end if
 
-                        # Above threshold => true, false otherwise
-                        threshold_prediction[model_outputs > threshold] = 1.0
-                        threshold_prediction[model_outputs <= threshold] = 0.0
+                        # Document truth
+                        document_truth = int(document_true.item())
 
                         # True positives
-                        true_index = threshold_prediction == 1.0
-                        false_index = threshold_prediction == 0.0
+                        if model_prediction == 1 and document_truth == 1:
+                            validation_true_positives[threshold_i] += 1
+                        # end if
 
-                        # Add counts
-                        validation_true_positives[threshold_i] += float((threshold_prediction[true_index] == outputs[true_index]).sum())
-                        validation_false_positives[threshold_i] += float((threshold_prediction[true_index] != outputs[true_index]).sum())
-                        validation_true_negatives[threshold_i] += float((threshold_prediction[false_index] == outputs[false_index]).sum())
-                        validation_false_negatives[threshold_i] += float((threshold_prediction[false_index] != outputs[false_index]).sum())
+                        # False positive
+                        if model_prediction == 1 and document_truth == 0:
+                            validation_false_positives[threshold_i] += 1
+                        # end if
+
+                        # True negatives
+                        if model_prediction == 0 and document_truth == 0:
+                            validation_true_negatives[threshold_i] += 1
+                        # end if
+
+                        # False negatives
+                        if model_prediction == 0 and document_truth == 1:
+                            validation_false_negatives[threshold_i] += 1
+                        # end if
                     # end for
 
                     # Add
@@ -461,26 +468,35 @@ for space in param_space:
                 # Compute loss
                 loss = loss_function(model_outputs, outputs)
 
-                # Threshold prediction
-                if use_cuda:
-                    threshold_prediction = torch.zeros(model_outputs.size()).cuda()
+                # Prediction
+                if torch.sum(model_outputs > best_threshold) == 0.0:
+                    model_prediction = 0
                 else:
-                    threshold_prediction = torch.zeros(model_outputs.size())
+                    model_prediction = 1
                 # end if
 
-                # Above threshold => true, false otherwise
-                threshold_prediction[model_outputs > best_threshold] = 1.0
-                threshold_prediction[model_outputs <= best_threshold] = 0.0
+                # Document truth
+                document_truth = int(document_true.item())
 
                 # True positives
-                true_index = threshold_prediction == 1.0
-                false_index = threshold_prediction == 0.0
+                if model_prediction == 1 and document_truth == 1:
+                    test_true_positives += 1
+                # end if
 
-                # Add counts
-                test_true_positives += float((threshold_prediction[true_index] == outputs[true_index]).sum())
-                test_false_positives += float((threshold_prediction[true_index] != outputs[true_index]).sum())
-                test_true_negatives += float((threshold_prediction[false_index] == outputs[false_index]).sum())
-                test_false_negatives += float((threshold_prediction[false_index] != outputs[false_index]).sum())
+                # False positive
+                if model_prediction == 1 and document_truth == 0:
+                    test_false_positives += 1
+                # end if
+
+                # True negatives
+                if model_prediction == 0 and document_truth == 0:
+                    test_true_negatives += 1
+                # end if
+
+                # False negatives
+                if model_prediction == 0 and document_truth == 1:
+                    test_false_negatives += 1
+                # end if
 
                 # Add
                 test_loss += loss.item()
@@ -488,25 +504,24 @@ for space in param_space:
             # end for
 
             # Precision
-            try:
+            if test_true_positives + test_false_positives > 0:
                 precision = test_true_positives / (test_true_positives + test_false_positives)
-            except ZeroDivisionError:
+            else:
                 precision = 0.0
-            # end try
+            # end if
 
             # Recall
-            try:
+            if test_true_positives + test_false_negatives > 0.0:
                 recall = test_true_positives / (test_true_positives + test_false_negatives)
-            except ZeroDivisionError:
+            else:
                 recall = 0.0
-            # end try
+            # end if
 
-            # F1 score
-            try:
+            if precision > 0 and recall > 0:
                 test_f1_score = 2.0 * (precision * recall) / (precision + recall)
-            except ZeroDivisionError:
+            else:
                 test_f1_score = 0.0
-            # end try
+            # end if
 
             # Show loss
             print("Test loss {}, F1-score {} (threshold {})".format(

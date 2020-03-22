@@ -30,6 +30,7 @@ from torch import optim
 import torch.nn as nn
 from torch.autograd import Variable
 import os
+import time
 
 #region INIT
 
@@ -49,7 +50,7 @@ for space in param_space:
     num_layers, dropout, output_dropout = functions.get_params(space)
 
     # Load PAN17 dataset
-    pan17_dataset, pan17_loader_train, pan17_loader_dev, pan17_loader_test = dataset.load_pan17_dataset(
+    pan17_dataset, pan17_dataset_per_tweet, pan17_loader_train, pan17_loader_dev, pan17_loader_test = dataset.load_pan17_dataset_per_tweet(
         output_length=settings.output_length[feature],
         output_dim=settings.input_dims[feature],
         batch_size=args.batch_size,
@@ -57,7 +58,10 @@ for space in param_space:
     )
 
     # Print authors
+    xp.write("Number of users : {}".format(len(pan17_dataset_per_tweet.user_tweets)), log_level=0)
+    xp.write("Size of the dataset : {}".format(len(pan17_dataset_per_tweet)), log_level=0)
     xp.write("Number of users : {}".format(len(pan17_dataset.user_tweets)), log_level=0)
+    xp.write("Size of the dataset : {}".format(len(pan17_dataset)), log_level=0)
 
     # Choose the right transformer
     pan17_dataset.transform = features.create_transformer(
@@ -87,12 +91,13 @@ for space in param_space:
             pan17_loader_test.dataset.set_fold(k)
 
             # Choose the right transformer
-            pan17_dataset.transform = features.create_transformer(
+            pan17_dataset_per_tweet.transform = features.create_transformer(
                 feature,
                 args.pretrained,
                 args.embedding_path,
                 lang
             )
+            pan17_dataset.transform = pan17_dataset_per_tweet.transform
 
             # Model
             rnn = rnn_func.create_profiling_model(
@@ -106,8 +111,12 @@ for space in param_space:
                 num_layers=num_layers,
                 dropout=dropout,
                 output_dropout=output_dropout,
-                batch_size=args.batch_size
+                batch_size=args.batch_size,
+                per_tweet=True
             )
+
+            # Show model
+            print(rnn)
 
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
@@ -119,6 +128,7 @@ for space in param_space:
             no_improv = 0
 
             # Loss function
+            # loss_function = nn.MSELoss()
             # loss_function = nn.NLLLoss()
             loss_function = nn.CrossEntropyLoss()
 
@@ -140,7 +150,10 @@ for space in param_space:
 
                 # Compute longest tweet
                 longest_tweet = 0
-                # max_index = 0
+
+                # Start time
+                start = time.time()
+
                 # Go through the training set
                 for i, data in enumerate(pan17_loader_train):
                     # Data
@@ -153,8 +166,7 @@ for space in param_space:
 
                     # Lengths
                     batch_size = inputs.size(0)
-                    n_tweets = inputs.size(1)
-                    tweets_size = inputs.size(2)
+                    tweets_size = inputs.size(1)
 
                     # Index targets
                     indices_outputs = torch.LongTensor(batch_size)
@@ -168,7 +180,7 @@ for space in param_space:
                     # To GPU
                     if use_cuda:
                         inputs, indices_outputs,  = inputs.cuda(), indices_outputs.cuda()
-                        input_lengths = input_lengths.cuda()
+                        input_lengths = input_lengths.reshape(-1).cuda()
                     # end if
 
                     # Zero grad
@@ -176,11 +188,15 @@ for space in param_space:
 
                     # Forward
                     model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
-                    # print(indices_outputs)
+
+                    # Average
+                    model_outputs = torch.mean(model_outputs, dim=1)
 
                     # Class with highest probability
                     _, predicted_class = torch.max(model_outputs, dim=1)
-
+                    """print(model_outputs)
+                    print(model_outputs.size())
+                    print(indices_outputs.size())"""
                     # Compute loss
                     loss = loss_function(model_outputs, indices_outputs)
 
@@ -194,8 +210,16 @@ for space in param_space:
                     training_acc += torch.sum(predicted_class == indices_outputs).item()
                     training_loss += loss.item()
                     training_total += batch_size
+                    print(training_total)
                 # end for
 
+                # End time
+                end = time.time()
+
+                print(end - start)
+                print(training_acc / training_total)
+                print(training_total)
+                exit()
                 # Evaluation mode
                 rnn.eval()
 
@@ -209,29 +233,33 @@ for space in param_space:
                     n_tweets = inputs.size(1)
                     tweets_size = inputs.size(2)
 
-                    # Index targets
-                    indices_outputs = torch.LongTensor(batch_size)
-                    for batch_i in range(batch_size):
-                        indices_outputs[batch_i] = pan17_dataset.gender2num[gender[batch_i]]
-                    # end for
+                    # For each profile
+                    for profile_i in range(batch_size):
+                        # Transform to variable
+                        profile_inputs = inputs[profile_i]
+                        profile_lengths = input_lengths[profile_i]
 
-                    # Transform to variable
-                    inputs, indices_outputs = Variable(inputs), Variable(indices_outputs)
+                        # For each tweet
+                        for tweet_i in range(100):
+                            # To variable
+                            tweet_inputs = profile_inputs[tweet_i]
+                            tweet_length = profile_lengths[tweet_i]
 
-                    # To GPU
-                    if use_cuda:
-                        inputs, indices_outputs = inputs.cuda(), indices_outputs.cuda()
-                        input_lengths = input_lengths.cuda()
-                    # end if
+                            # Add batch dim
+                            tweet_inputs = tweet_inputs.reshape(1, -1)
+                            tweet_length = tweet_length.reshape(1, -1)
 
-                    # Forward
-                    model_outputs = rnn(inputs, input_lengths, reset_hidden=True)
+                            # To GPU
+                            if use_cuda:
+                                tweet_inputs = tweet_inputs.cuda()
+                                tweet_length = tweet_length.cuda()
+                            # end if
 
-                    # Class with highest probability
-                    _, predicted_class = torch.max(model_outputs, dim=1)
+                            # Forward
+                            model_outputs = rnn(tweet_inputs, tweet_length, reset_hidden=True)
 
-                    # Compute loss
-                    loss = loss_function(model_outputs, indices_outputs)
+                            # Compute loss
+                            loss = loss_function(model_outputs, indices_outputs)
 
                     # Add
                     validation_loss += loss.item()
@@ -245,21 +273,21 @@ for space in param_space:
 
                 # Keep best model
                 if validation_accuracy > best_acc:
-                    print("New best model!")
+                    add_str = "##"
                     best_acc = validation_accuracy
                     torch.save(
                         rnn.state_dict(),
                         # open(os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth"), 'wb')
-                        os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth")
+                        os.path.join(args.output, args.name, "rnn_profiling." + str(k) + u".pth")
                     )
+                else:
+                    add_str = ""
                 # end if
 
                 # Test loss
                 test_loss = 0.0
                 test_acc = 0.0
                 test_total = 0
-
-                # Load model
 
                 # Evaluate best model on test set
                 for i, data in enumerate(pan17_loader_test):
@@ -308,7 +336,7 @@ for space in param_space:
                 test_accuracy = test_acc / test_total * 100.0
 
                 # Show loss
-                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {}), test loss {} ({}%, {})".format(
+                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {}), test loss {} ({}%, {}) {}".format(
                     epoch,
                     training_loss / training_total,
                     round(training_accuracy, 2),
@@ -318,7 +346,8 @@ for space in param_space:
                     validation_total,
                     test_loss / test_total,
                     round(test_accuracy, 2),
-                    test_total
+                    test_total,
+                    add_str
                 ))
 
                 # Print longest tweet
