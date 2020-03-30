@@ -116,7 +116,7 @@ def load_sfgram_dataset(author, batch_size, load_type, block_length=40, k=5):
 
 
 # Load PAN17 dataset
-def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained, k=10):
+def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained, load_type, transform, k=10):
     """
         Load PAN 17 dataset
         :param k:
@@ -132,7 +132,9 @@ def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained,
         output_dim=output_dim,
         trained=trained,
         shuffle=True,
-        per_tweet=True
+        per_tweet=True,
+        load_type=load_type,
+        transform=transform
     )
 
     # Load
@@ -145,7 +147,9 @@ def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained,
         output_dim=output_dim,
         trained=trained,
         shuffle=True,
-        per_tweet=False
+        per_tweet=False,
+        load_type=load_type,
+        transform=transform
     )
 
     # Training

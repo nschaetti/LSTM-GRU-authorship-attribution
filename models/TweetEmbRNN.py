@@ -145,10 +145,10 @@ class TweetEmbRNN(nn.Module):
         if reset_hidden:
             self.hidden = self.init_hidden(batch_size, n_tweets)
         # end if
-        print(x_lengths)
+
         # Pack to hide padded item to RNN
         x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
-        exit()
+
         # Exec. RNN
         x, result_hidden = self.rnn(x)
         self.hidden = result_hidden

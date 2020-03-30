@@ -35,7 +35,6 @@ import os
 #region INIT
 
 # Param
-use_mean_loss = 'arithmetic'
 use_l1_loss = False
 n_threshold = 20
 thresholds = torch.linspace(0.0, 1.0, n_threshold)
@@ -174,7 +173,7 @@ for space in param_space:
                     # Forward
                     model_outputs = rnn(inputs, reset_hidden=True)
 
-                    if use_mean_loss == 'harmonic':
+                    if args.loss == 'harmonic':
                         # Index of zero and one outputs
                         zero_index = (outputs == 0.0)
                         one_index = (outputs == 1.0)
@@ -185,7 +184,7 @@ for space in param_space:
 
                         # Harmonic loss
                         loss = 2.0 * ((loss_zero * loss_one) / (loss_zero + loss_one))
-                    elif use_mean_loss == 'arithmetic':
+                    elif args.loss == 'arithmetic':
                         # Index of zero and one outputs
                         zero_index = (outputs == 0.0)
                         one_index = (outputs == 1.0)
@@ -200,6 +199,17 @@ for space in param_space:
                         else:
                             loss = loss_function(model_outputs[zero_index], outputs[zero_index])
                         # end if
+                    elif args.loss == 'max':
+                        # Index of zero and one outputs
+                        zero_index = (outputs == 0.0)
+                        one_index = (outputs == 1.0)
+
+                        # Loss for each class
+                        loss_zero = loss_function(model_outputs[zero_index], outputs[zero_index])
+                        loss_one = loss_function(model_outputs[one_index], outputs[one_index])
+
+                        # Max
+                        loss = torch.max(loss_zero, loss_one)
                     else:
                         # Compute loss
                         loss = loss_function(model_outputs, outputs)
@@ -297,7 +307,7 @@ for space in param_space:
                     model_outputs = rnn(inputs, reset_hidden=True)
 
                     # Different loss
-                    if use_mean_loss == 'harmonic':
+                    if args.loss == 'harmonic':
                         # Index of zero and one outputs
                         zero_index = (outputs == 0.0)
                         one_index = (outputs == 1.0)
@@ -308,7 +318,7 @@ for space in param_space:
 
                         # Harmonic loss
                         loss = (args.zero_weight * loss_zero + loss_one) / (args.zero_weight + 1)
-                    elif use_mean_loss == 'arithmetic':
+                    elif args.loss == 'arithmetic':
                         # Index of zero and one outputs
                         zero_index = (outputs == 0.0)
                         one_index = (outputs == 1.0)
@@ -323,6 +333,17 @@ for space in param_space:
                         else:
                             loss = loss_function(model_outputs[zero_index], outputs[zero_index])
                         # end if
+                    elif args.loss == 'max':
+                        # Index of zero and one outputs
+                        zero_index = (outputs == 0.0)
+                        one_index = (outputs == 1.0)
+
+                        # Loss for each class
+                        loss_zero = loss_function(model_outputs[zero_index], outputs[zero_index])
+                        loss_one = loss_function(model_outputs[one_index], outputs[one_index])
+
+                        # Max
+                        loss = torch.max(loss_zero, loss_one)
                     else:
                         # Compute loss
                         loss = loss_function(model_outputs, outputs)

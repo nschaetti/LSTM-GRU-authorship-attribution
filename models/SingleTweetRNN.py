@@ -103,20 +103,22 @@ class SingleTweetRNN(nn.Module):
         :return:
         """
         # Sizes
-        batch_size, tweet_length, embedding_dim = x.size()
-
+        batch_size, tweet_length, input_dim = x.size()
+        print("Batch size : {}".format(batch_size))
+        print("Tweet length : {}".format(tweet_length))
+        print("Input dim : {}".format(input_dim))
         # Contiguous inputs
-        x = x.contiguous()
+        # x = x.contiguous()
 
         # Resize to batch * n_tweets, tweet_length, embedding_dim
-        x = x.reshape(batch_size, tweet_length, self.embedding_dim)
+        # x = x.reshape(batch_size, tweet_length, self.input_dim)
         x_lengths = x_lengths.reshape(batch_size)
-
+        print("X length : {}".format(x_lengths))
         # Init hiddens
         if reset_hidden:
             self.hidden = self.init_hidden(batch_size)
         # end if
-        # print(x.size())
+
         # Pack to hide padded item to RNN
         x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
 

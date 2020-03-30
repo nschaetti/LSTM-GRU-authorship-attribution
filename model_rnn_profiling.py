@@ -245,13 +245,15 @@ for space in param_space:
 
                 # Keep best model
                 if validation_accuracy > best_acc:
-                    print("New best model!")
+                    add_str = "##"
                     best_acc = validation_accuracy
                     torch.save(
                         rnn.state_dict(),
                         # open(os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth"), 'wb')
                         os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth")
                     )
+                else:
+                    add_str = ""
                 # end if
 
                 # Test loss
@@ -308,7 +310,7 @@ for space in param_space:
                 test_accuracy = test_acc / test_total * 100.0
 
                 # Show loss
-                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {}), test loss {} ({}%, {})".format(
+                print("epoch {}, training loss {} ({}% / {}), validation loss {} ({}% / {}), test loss {} ({}%, {}) {}".format(
                     epoch,
                     training_loss / training_total,
                     round(training_accuracy, 2),
@@ -318,7 +320,8 @@ for space in param_space:
                     validation_total,
                     test_loss / test_total,
                     round(test_accuracy, 2),
-                    test_total
+                    test_total,
+                    add_str
                 ))
 
                 # Print longest tweet
@@ -334,7 +337,7 @@ for space in param_space:
             rnn.load_state_dict(
                 torch.load(
                     # open(os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth"), 'rb')
-                    os.path.join(args.output, args.name, u"rnn_profiling." + str(k) + u".pth")
+                    os.path.join(args.output, args.name, "rnn_profiling." + str(k) + u".pth")
                 )
             )
 
