@@ -89,7 +89,7 @@ def parser_training():
     args.add_argument(command="--window-size", name="window_size", type=str, help="Window size for prediction",
                       extended=True, required=False, default=0)
     args.add_argument(command="--learning-rate", name="learning_rate", type=float, help="Learning rate",
-                      extended=True, required=False, default=0.0001)
+                      extended=False, required=False, default=0.0001)
     args.add_argument(command="--measure", name="measure", type=str, help="Which measure to test (global/local)", extended=False, required=False, default='global')
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
     args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
