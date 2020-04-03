@@ -99,7 +99,7 @@ for space in param_space:
         average_k_fold = np.array([])
 
         # For each fold
-        for k in range(5):
+        for k in range(args.fold, 5):
             # Change fold state
             xp.set_fold_state(k)
             sfgram_loader_train.dataset.set_fold(k)
