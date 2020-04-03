@@ -28,7 +28,7 @@ def parser_training():
     args.add_argument(command="--dataset-start", name="dataset_start", type=float,
                       help="Where to start in the data set", extended=True, default=0)
     args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
-    args.add_argument(command="--inverse-dev-test", name="inverse_dev_test", action='store_true', help="Inverse Dev Test", extended=False, default=10)
+    args.add_argument(command="--inverse-dev-test", name="inverse_dev_test", action='store_true', help="Inverse Dev Test", extended=False, default=False)
 
     # Author parameters
     args.add_argument(command="--n-authors", name="n_authors", type=int,

@@ -56,14 +56,25 @@ for space in param_space:
     num_layers, dropout, output_dropout = functions.get_params(space)
 
     # Load SFGram dataset
-    sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_precomputed_dataset(
-        block_length=40,
-        batch_size=args.batch_size,
-        author=args.author0,
-        pretrained=args.pretrained,
-        feature=feature,
-        dev_per_file=True
-    )
+    if not args.inverse_dev_test:
+        sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_precomputed_dataset(
+            block_length=40,
+            batch_size=args.batch_size,
+            author=args.author0,
+            pretrained=args.pretrained,
+            feature=feature,
+            dev_per_file=True
+        )
+    else:
+        sfgram_loader_train, sfgram_loader_test, sfgram_loader_dev = dataset.load_sfgram_precomputed_dataset(
+            block_length=40,
+            batch_size=args.batch_size,
+            author=args.author0,
+            pretrained=args.pretrained,
+            feature=feature,
+            dev_per_file=True
+        )
+    # end if
 
     # Print dataset information
     xp.write("TRAIN Dataset length : {}".format(sfgram_loader_train.dataset.data_length), log_level=0)
