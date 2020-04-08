@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Word pretrained ASIMOV
+python3 model_rnn_sfgram_document.py --author0 ASIMOV --hidden-size 25  --cell-size 25 --embedding-size 30 --feature c2 --learning-window 40 --max-length 40 --k 5 --zero-weight 1.25 --output-dropout 0.5 --output outputs/sfgram/ --name "SFG DOC ASIMOV GRU 25-25 C2-T" --description "Authorship Verification Document ASIMOV SFGram GRU 25 hidden neurons, Character bigram (C2) trained" --rnn-type GRU --epoch 50 --batch-size 256 --verbose 4 --cuda
+python3 model_rnn_sfgram_document.py --author0 ASIMOV --hidden-size 50  --cell-size 50 --embedding-size 30 --feature c2 --learning-window 40 --max-length 40 --k 5 --zero-weight 1.25 --output-dropout 0.5 --output outputs/sfgram/ --name "SFG DOC ASIMOV GRU 50-50 C2-T" --description "Authorship Verification Document ASIMOV SFGram GRU 50 hidden neurons, Character bigram (C2) trained" --rnn-type GRU --epoch 55 --batch-size 256 --verbose 4 --cuda
+python3 model_rnn_sfgram_document.py --author0 ASIMOV --hidden-size 100 --cell-size 100 --embedding-size 30 --feature c2 --learning-window 40 --max-length 40 --k 5 --zero-weight 1.25 --output-dropout 0.5 --output outputs/sfgram/ --name "SFG DOC ASIMOV GRU 100-100 C2-T" --description "Authorship Verification Document ASIMOV SFGram GRU 100 hidden neurons, Character bigram (C2) trained" --rnn-type GRU --epoch 60 --batch-size 256 --verbose 4 --cuda
