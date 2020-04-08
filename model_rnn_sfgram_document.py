@@ -439,11 +439,11 @@ for space in param_space:
             total_outputs = None
 
             # Load best model
-            rnn.load_state_dict(
+            """rnn.load_state_dict(
                 torch.load(
                     os.path.join(args.output, args.name, "rnn_sfgram." + str(k) + u".pth")
                 )
-            )
+            )"""
 
             # Test loss and total
             test_loss = 0.0
