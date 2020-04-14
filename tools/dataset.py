@@ -178,7 +178,7 @@ def load_pan17_dataset_per_tweet(output_length, output_dim, batch_size, trained,
 
 
 # Load PAN17 dataset
-def load_pan17_dataset(output_length, output_dim, batch_size, trained, per_tweet=False, k=10):
+def load_pan17_dataset(output_length, output_dim, batch_size, trained, load_type, per_tweet=False, k=10):
     """
     Load PAN 17 dataset
     :param k:
@@ -194,7 +194,8 @@ def load_pan17_dataset(output_length, output_dim, batch_size, trained, per_tweet
         output_dim=output_dim,
         trained=trained,
         shuffle=True,
-        per_tweet=per_tweet
+        per_tweet=per_tweet,
+        load_type=load_type
     )
 
     # Training

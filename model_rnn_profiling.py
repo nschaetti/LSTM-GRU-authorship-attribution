@@ -53,7 +53,8 @@ for space in param_space:
         output_length=settings.output_length[feature],
         output_dim=settings.input_dims[feature],
         batch_size=args.batch_size,
-        trained=not args.pretrained
+        trained=not args.pretrained,
+        load_type=feature
     )
 
     # Print authors
