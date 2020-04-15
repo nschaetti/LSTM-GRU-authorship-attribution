@@ -209,7 +209,9 @@ for space in param_space:
                     batch_size = inputs.size(0)
                     n_tweets = inputs.size(1)
                     tweets_size = inputs.size(2)
-
+                    # if torch.max(inputs) > max_index:
+                    #    max_index = torch.max(inputs)
+                    # end if
                     # Index targets
                     indices_outputs = torch.LongTensor(batch_size)
                     for batch_i in range(batch_size):
@@ -237,6 +239,8 @@ for space in param_space:
                     # Add
                     validation_loss += loss.item()
                     validation_acc += torch.sum(predicted_class == indices_outputs).item()
+                    # validation_loss += 0
+                    # validation_acc += 0
                     validation_total += batch_size
                 # end for
 
@@ -275,7 +279,9 @@ for space in param_space:
                     batch_size = inputs.size(0)
                     n_tweets = inputs.size(1)
                     tweets_size = inputs.size(2)
-
+                    # if torch.max(inputs) > max_index:
+                    #     max_index = torch.max(inputs)
+                    # end if
                     # Index targets
                     indices_outputs = torch.LongTensor(batch_size)
                     for batch_i in range(batch_size):
@@ -303,7 +309,9 @@ for space in param_space:
 
                     # Loss
                     test_loss += loss.item()
+                    # test_loss += 0
                     test_acc += torch.sum(predicted_class == indices_outputs).item()
+                    # test_acc += 0
                     test_total += batch_size
                 # end for
 

@@ -147,14 +147,14 @@ class TweetEmbRNN(nn.Module):
         # end if
 
         # Pack to hide padded item to RNN
-        x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
+        # x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
 
         # Exec. RNN
         x, result_hidden = self.rnn(x)
         self.hidden = result_hidden
 
         # Undo packing
-        x, _ = utils.rnn.pad_packed_sequence(x, batch_first=True)
+        # x, _ = utils.rnn.pad_packed_sequence(x, batch_first=True)
 
         # Contiguous
         x = x.contiguous()
@@ -169,7 +169,7 @@ class TweetEmbRNN(nn.Module):
         x = F.log_softmax(x, dim=1)
 
         # Resize back
-        x = x.reshape(batch_size, n_tweets, max_tweet_length, 2)
+        x = x.reshape(batch_size, n_tweets, tweet_length, 2)
 
         # Average
         x = torch.mean(torch.mean(x, dim=2), dim=1)

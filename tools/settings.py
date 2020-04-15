@@ -65,10 +65,10 @@ output_length['c3'] = 161
 
 # Voc size
 profiling_voc_size = dict()
-profiling_voc_size['wv'] = 420321
+profiling_voc_size['wv'] = 436997
 profiling_voc_size['c1'] = 1694
-profiling_voc_size['c2'] = 25004
-profiling_voc_size['c3'] = 354231
+profiling_voc_size['c2'] = 25739
+profiling_voc_size['c3'] = 357269
 
 # AUTHOR VERIFICATION
 
