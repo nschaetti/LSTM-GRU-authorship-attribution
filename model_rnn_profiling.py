@@ -112,7 +112,7 @@ for space in param_space:
 
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
-            optimizer = torch.optim.Adam(rnn.parameters(), lr=0.0005)
+            optimizer = torch.optim.Adam(rnn.parameters(), lr=args.learning_rate)
 
             # Best model
             best_acc = 0.0

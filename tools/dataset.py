@@ -197,7 +197,7 @@ def load_pan17_dataset(output_length, output_dim, batch_size, trained, load_type
         shuffle=True,
         per_tweet=per_tweet,
         load_type=load_type,
-        save_transform=False
+        save_transform=True
     )
 
     # Training
