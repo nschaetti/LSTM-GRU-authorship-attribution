@@ -58,7 +58,8 @@ ce_text_length = 15
 
 # Output length
 output_length = dict()
-output_length['wv'] = 110
+# output_length['wv'] = 110
+output_length['wv'] = 40
 output_length['c1'] = 163
 output_length['c2'] = 162
 output_length['c3'] = 161

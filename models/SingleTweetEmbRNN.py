@@ -136,22 +136,15 @@ class SingleTweetEmbRNN(nn.Module):
 
         # Resize to batch * n_tweets, tweet_length, embedding_dim
         x = x.reshape(batch_size, tweet_length, self.embedding_dim)
-        x_lengths = x_lengths.reshape(batch_size)
 
         # Init hiddens
         if reset_hidden:
             self.hidden = self.init_hidden(batch_size)
         # end if
 
-        # Pack to hide padded item to RNN
-        x = utils.rnn.pack_padded_sequence(x, x_lengths, batch_first=True, enforce_sorted=False)
-
         # Exec. RNN
         x, result_hidden = self.rnn(x)
         self.hidden = result_hidden
-
-        # Undo packing
-        x, _ = utils.rnn.pad_packed_sequence(x, batch_first=True)
 
         # Dropout
         x = self.dropout_layer(x)
