@@ -50,6 +50,7 @@ def parser_training():
     args.add_argument(command="--learning-window", name="learning_window", type=int, help="Size of the learning window",
                       required=False, extended=True, default=40)
     args.add_argument(command="--num-layers", name="num_layers", type=int, help="Number of recurrent layers", default=1, extended=True)
+    args.add_argument(command="--num-channels", name="num_channels", type=int, help="Number of channels (for CNN)", default=50, extended=False)
     args.add_argument(command="--dropout", name="dropout", type=float, help="Dropout", default=0, extended=True)
     args.add_argument(command="--output-dropout", name="output_dropout", type=float, help="Output dropout", default=0, extended=True)
     args.add_argument(command="--feature", name="feature", type=str,
