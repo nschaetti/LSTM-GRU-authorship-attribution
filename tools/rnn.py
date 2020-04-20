@@ -9,6 +9,8 @@ from models.TweetEmbRNN import TweetEmbRNN
 from models.VerificationRNN import VerificationRNN
 from models.SingleTweetEmbRNN import SingleTweetEmbRNN
 from models.SingleTweetRNN import SingleTweetRNN
+import echotorch.nn as etnn
+import echotorch.utils.matrix_generation
 
 
 # Create model for author verification
@@ -64,6 +66,52 @@ def create_verification_model(feature, pretrained, cuda, embedding_dim=300, hidd
 
     return rnn
 # end create_verification_model
+
+# Create ESN model for profiling
+def create_esn_profiling_model(feature, hidden_dim, connectivity, spectral_radius, leaky_rate, input_scaling=0.25,
+                               bias_scaling=0.25, ridge_param=0.0001):
+    """
+    Create ESN model for
+    :param feature:
+    :param input_dim:
+    :param hidden_dim:
+    :param vocab_size:
+    :param batch_size:
+    :return:
+    """
+    # Internal matrix
+    w_generator = echotorch.utils.matrix_generation.NormalMatrixGenerator(
+        connectivity=connectivity,
+        spetral_radius=spectral_radius
+    )
+
+    # Input weights
+    win_generator = echotorch.utils.matrix_generation.NormalMatrixGenerator(
+        connectivity=connectivity,
+        scale=input_scaling,
+        apply_spectral_radius=False
+    )
+
+    # Bias vector
+    wbias_generator = echotorch.utils.matrix_generation.NormalMatrixGenerator(
+        connectivity=connectivity,
+        scale=bias_scaling,
+        apply_spectral_radius=False
+    )
+
+    # ESN cell
+    esn = etnn.LiESN(
+        input_dim=settings.input_dims[feature],
+        output_dim=2,
+        hidden_dim=hidden_dim,
+        leaky_rate=leaky_rate,
+        ridge_param=ridge_param,
+        w_generator=w_generator,
+        win_generator=win_generator,
+        wbias_generator=wbias_generator
+    )
+    return esn
+# end create_esn_profiling_model
 
 # Create model for profiling
 def create_profiling_model(feature, pretrained, cuda, embedding_dim=300, hidden_dim=1000, vocab_size=100,

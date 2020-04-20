@@ -490,7 +490,7 @@ for space in param_space:
             ))
 
             # Print success rate
-            xp.add_result(test_accuracy)
+            xp.add_result(test_profile_accuracy)
         # end for
     # end for
 

@@ -77,6 +77,10 @@ def parser_training():
     args.add_argument(command="--loss", name="loss", type=str, default="arithmetic",
                       help="Loss to use (arithmetic, harmonic, max", required=False, extended=False)
 
+    # ESN arguments
+    args.add_argument(command="--leaky-rate", name="leaky_rate", type=float, help="Reservoir's leaky rate", extended=False, required=False, default=1.0)
+    args.add_argument(command="--spectral-radius", name="spectral_radius", type=float, help="Reservoir's spectral radius", extended=False, required=False, default=0.95)
+
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
                       help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
