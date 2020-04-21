@@ -149,7 +149,6 @@ for space in param_space:
 
                 # Forward
                 model_outputs = rnn(concat_inputs, concat_outputs)
-                break
             # end for
 
             # Finalize training
