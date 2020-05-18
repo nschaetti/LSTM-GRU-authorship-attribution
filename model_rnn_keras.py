@@ -41,7 +41,8 @@ import torch
 ####################################################
 
 np.random.seed(1)
-tf.set_random_seed(1)
+# tf.set_random_seed(1)
+tf.random.set_seed(1)
 torch.manual_seed(1)
 
 
@@ -168,7 +169,8 @@ for space in param_space:
             # end if
 
             # Adam
-            adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+            # adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+            adam = optimizers.RMSprop(lr=0.001)
 
             # Compile the model
             model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])

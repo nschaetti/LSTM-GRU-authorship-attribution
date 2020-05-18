@@ -237,7 +237,8 @@ def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level
             n_authors=n_authors,
             download=True,
             dataset_size=dataset_size,
-            dataset_start=dataset_start
+            dataset_start=dataset_start,
+            root='./data_c50'
         )
     else:
         reutersc50_dataset = torchlanguage.datasets.ReutersC50Dataset(
@@ -245,7 +246,8 @@ def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level
             download=True,
             dataset_size=dataset_size,
             dataset_start=dataset_start,
-            load_features=features
+            load_features=features,
+            root='./data_c50'
         )
     # end if
 
