@@ -98,7 +98,7 @@ def parser_training():
                       extended=False, required=False, default=0.0001)
     args.add_argument(command="--measure", name="measure", type=str, help="Which measure to test (global/local)", extended=False, required=False, default='global')
     # args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
-    args.add_argument(command="--xpname", name="name", type=str, help="Experiment's name", extended=False, required=True)
+    args.add_argument(command="--xpname", name="xpname", type=str, help="Experiment's name", extended=False, required=True)
     args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
                       extended=False, required=True)
     args.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
