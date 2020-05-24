@@ -115,7 +115,7 @@ for space in param_space:
         oov = np.array([])
 
         # For each fold
-        for k in range(args.k):
+        for k in range(args.fold, args.k):
             # Choose fold
             xp.set_fold_state(k)
             reuters_loader_train.dataset.set_fold(k)
