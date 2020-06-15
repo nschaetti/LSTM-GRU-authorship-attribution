@@ -110,6 +110,13 @@ for space in param_space:
                 batch_size=args.batch_size
             )
 
+            # Model parameters
+            model_parameters = filter(lambda p: p.requires_grad, rnn.parameters())
+            # for p in model_parameters:
+            #     print(p)
+            # end for
+            print("Parameters : {}".format(sum([p.numel() for p in model_parameters])))
+            exit()
             # Optimizer
             # optimizer = optim.SGD(rnn.parameters(), lr=0.0001, momentum=0.9)
             optimizer = torch.optim.Adam(rnn.parameters(), lr=args.learning_rate)

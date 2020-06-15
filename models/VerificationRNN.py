@@ -38,7 +38,9 @@ class VerificationRNN(nn.Module):
         self.use_embedding_layer = use_embedding_layer
 
         # Embeddings
-        self.embedding_layer = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        if use_embedding_layer:
+            self.embedding_layer = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        # end if
 
         # RNN
         if rnn_type == 'lstm':

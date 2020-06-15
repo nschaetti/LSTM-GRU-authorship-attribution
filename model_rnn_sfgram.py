@@ -54,6 +54,28 @@ for space in param_space:
     hidden_size, cell_size, feature, lang, dataset_start, window_size, learning_window, embedding_size, rnn_type, \
     num_layers, dropout, output_dropout = functions.get_params(space)
 
+    # Model
+    rnn = rnn_func.create_verification_model(
+        feature=feature,
+        pretrained=args.pretrained,
+        cuda=args.cuda,
+        embedding_dim=embedding_size,
+        hidden_dim=hidden_size,
+        vocab_size=settings.verification_voc_size[feature],
+        rnn_type=rnn_type,
+        num_layers=num_layers,
+        dropout=dropout,
+        output_dropout=output_dropout,
+        batch_size=args.batch_size
+    )
+    # Model parameters
+    model_parameters = filter(lambda p: p.requires_grad, rnn.parameters())
+    # for p in model_parameters:
+    #     print(p)
+    # end for
+    print("Parameters : {}".format(sum([p.numel() for p in model_parameters])))
+    exit()
+
     # Load SFGram dataset
     if not args.inverse_dev_test:
         sfgram_loader_train, sfgram_loader_dev, sfgram_loader_test = dataset.load_sfgram_precomputed_dataset(
